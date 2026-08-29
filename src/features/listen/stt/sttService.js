@@ -650,6 +650,14 @@ class SttService {
             stdio: ['ignore', 'pipe', 'pipe'],
         });
 
+        // Sem este handler, um binário ausente/corrompido derruba o main process
+        // com uncaught exception (spawn ENOENT é emitido async no evento 'error').
+        this.systemAudioProc.on('error', err => {
+            console.error('[SttService] SystemAudioDump failed to start:', err.message);
+            this.sendToRenderer('update-status', 'Erro: captura de áudio do sistema indisponível');
+            this.systemAudioProc = null;
+        });
+
         if (!this.systemAudioProc.pid) {
             console.error('Failed to start SystemAudioDump');
             return false;
