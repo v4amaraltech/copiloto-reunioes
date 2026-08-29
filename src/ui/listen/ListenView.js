@@ -626,11 +626,11 @@ export class ListenView extends LitElement {
     render() {
         const displayText = this.isHovering
             ? this.viewMode === 'transcript'
-                ? 'Copy Transcript'
-                : 'Copy Glass Analysis'
+                ? 'Copiar transcrição'
+                : 'Copiar sugestão'
             : this.viewMode === 'insights'
-            ? `Live insights`
-            : `Glass is Listening ${this.elapsedTime}`;
+            ? `Sugestões ao vivo`
+            : `Escutando ${this.elapsedTime}`;
 
         return html`
             <div class="assistant-container">
@@ -646,14 +646,14 @@ export class ListenView extends LitElement {
                                           <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
                                           <circle cx="12" cy="12" r="3" />
                                       </svg>
-                                      <span>Show Transcript</span>
+                                      <span>Ver transcrição</span>
                                   `
                                 : html`
                                       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                           <path d="M9 11l3 3L22 4" />
                                           <path d="M22 12v7a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h11" />
                                       </svg>
-                                      <span>Show Insights</span>
+                                      <span>Ver sugestões</span>
                                   `}
                         </button>
                         <button

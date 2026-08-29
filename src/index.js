@@ -27,6 +27,15 @@ if (!app.isPackaged) {
         console.log = tee(console.log.bind(console));
         console.error = tee(console.error.bind(console));
         console.warn = tee(console.warn.bind(console));
+
+        // Espelha também o console dos renderers (erros de UI aparecem aqui)
+        app.on('web-contents-created', (_e, contents) => {
+            contents.on('console-message', (_ev, level, message, line, sourceId) => {
+                if (level >= 2 || /error|failed|uncaught/i.test(message)) {
+                    console.log(`[renderer:${level}] ${message} (${(sourceId || '').split('/').pop()}:${line})`);
+                }
+            });
+        });
     } catch (_) { /* log espelhado é best-effort */ }
 }
 const { createWindows } = require('./window/windowManager.js');
