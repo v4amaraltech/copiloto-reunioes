@@ -100,15 +100,22 @@ Deno.serve(async (req: Request) => {
     return json(500, { error: "proxy_not_configured" });
   }
 
-  // 6. Repassa para a Anthropic com a key do secret, streaming intacto
+  // 6. Repassa para a Anthropic com a key do secret, streaming intacto.
+  // Keys "identity-linked" exigem o header anthropic-workspace-id.
+  const upstreamHeaders: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-api-key": anthropicKey,
+    "anthropic-version": req.headers.get("anthropic-version") ?? "2023-06-01",
+  };
+  const workspaceId = Deno.env.get("COPILOTO_ANTHROPIC_WORKSPACE_ID");
+  console.log(`[proxy-llm] workspace-id secret: ${workspaceId ? `present (${workspaceId.slice(0, 10)}…)` : "ABSENT"}`);
+  if (workspaceId) {
+    upstreamHeaders["anthropic-workspace-id"] = workspaceId;
+  }
+
   const upstream = await fetch(ANTHROPIC_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicKey,
-      "anthropic-version": req.headers.get("anthropic-version") ??
-        "2023-06-01",
-    },
+    headers: upstreamHeaders,
     body,
   });
 

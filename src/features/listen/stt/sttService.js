@@ -711,7 +711,13 @@ class SttService {
                         await this.theirSttSession.sendRealtimeInput(payload);
                         this._themChunksSent = (this._themChunksSent || 0) + 1;
                         if (this._themChunksSent % 100 === 1) {
-                            console.log(`[SttService] system-audio → Them STT: ${this._themChunksSent} chunks enviados`);
+                            // Pico de amplitude do chunk (Int16): 0 = silêncio absoluto
+                            let peak = 0;
+                            for (let i = 0; i + 1 < monoChunk.length; i += 2) {
+                                const v = Math.abs(monoChunk.readInt16LE(i));
+                                if (v > peak) peak = v;
+                            }
+                            console.log(`[SttService] system-audio → Them STT: ${this._themChunksSent} chunks | peak=${peak}/32767`);
                         }
                     } catch (err) {
                         console.error('Error sending system audio:', err.message);
