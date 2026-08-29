@@ -116,21 +116,14 @@ class SummaryService {
 
         const recentConversation = this.formatConversationForPrompt(conversationTexts, maxTurns);
 
-        // 이전 분석 결과를 프롬프트에 포함
-        let contextualPrompt = '';
-        if (this.previousAnalysisResult) {
-            contextualPrompt = `
-Previous Analysis Context:
-- Main Topic: ${this.previousAnalysisResult.topic.header}
-- Key Points: ${this.previousAnalysisResult.summary.slice(0, 3).join(', ')}
-- Last Actions: ${this.previousAnalysisResult.actions.slice(0, 2).join(', ')}
+        // System prompt estável (bom para prompt caching); a janela de conversa vai na mensagem de usuário.
+        // O briefing do lead entrará como customPrompt (seção "User-provided context") na tarefa 1.9.
+        const systemPrompt = getSystemPrompt('v4_sales_copilot', '', false);
 
-Please build upon this context while analyzing the new conversation segments.
-`;
-        }
-
-        const basePrompt = getSystemPrompt('pickle_glass_analysis', '', false);
-        const systemPrompt = basePrompt.replace('{{CONVERSATION_HISTORY}}', recentConversation);
+        const lastSuggestion = this.previousAnalysisResult?.suggestion || '';
+        const antiRepeat = lastSuggestion
+            ? `Última sugestão dada ao closer (não repita a mesma ideia): "${lastSuggestion}"\n\n`
+            : '';
 
         try {
             if (this.currentSessionId) {
@@ -150,27 +143,10 @@ Please build upon this context while analyzing the new conversation segments.
                 },
                 {
                     role: 'user',
-                    content: `${contextualPrompt}
+                    content: `${antiRepeat}Conversa recente (me = closer, them = lead):
+${recentConversation}
 
-Analyze the conversation and provide a structured summary. Format your response as follows:
-
-**Summary Overview**
-- Main discussion point with context
-
-**Key Topic: [Topic Name]**
-- First key insight
-- Second key insight
-- Third key insight
-
-**Extended Explanation**
-Provide 2-3 sentences explaining the context and implications.
-
-**Suggested Questions**
-1. First follow-up question?
-2. Second follow-up question?
-3. Third follow-up question?
-
-Keep all points concise and build upon previous analysis if provided.`,
+Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
                 },
             ];
 
@@ -187,17 +163,28 @@ Keep all points concise and build upon previous analysis if provided.`,
             // e o texto completo segue para o parser/persistência ao final.
             const response = await llm.streamChat(messages);
             const responseText = await this._readSseStream(response);
-            console.log(`✅ Analysis response received: ${responseText}`);
-            const structuredData = this.parseResponseText(responseText, this.previousAnalysisResult);
+            console.log(`✅ Suggestion received: ${responseText}`);
 
-            if (this.currentSessionId) {
+            const suggestion = responseText.trim();
+
+            // A resposta é a sugestão em texto puro (máx. 2 frases) — sem parser.
+            // Shape compatível com a SummaryView atual até a tarefa 1.10 adaptar a UI.
+            const structuredData = {
+                suggestion,
+                summary: suggestion ? [suggestion] : [],
+                topic: { header: 'Sugestão', bullets: [] },
+                actions: [],
+                followUps: [],
+            };
+
+            if (this.currentSessionId && suggestion) {
                 try {
                     summaryRepository.saveSummary({
                         sessionId: this.currentSessionId,
-                        text: responseText,
-                        tldr: structuredData.summary.join('\n'),
-                        bullet_json: JSON.stringify(structuredData.topic.bullets),
-                        action_json: JSON.stringify(structuredData.actions),
+                        text: suggestion,
+                        tldr: suggestion,
+                        bullet_json: '[]',
+                        action_json: '[]',
                         model: modelInfo.model
                     });
                 } catch (err) {
@@ -222,119 +209,6 @@ Keep all points concise and build upon previous analysis if provided.`,
             console.error('❌ Error during analysis generation:', error.message);
             return this.previousAnalysisResult; // 에러 시 이전 결과 반환
         }
-    }
-
-    parseResponseText(responseText, previousResult) {
-        const structuredData = {
-            summary: [],
-            topic: { header: '', bullets: [] },
-            actions: [],
-            followUps: ['✉️ Draft a follow-up email', '✅ Generate action items', '📝 Show summary'],
-        };
-
-        // 이전 결과가 있으면 기본값으로 사용
-        if (previousResult) {
-            structuredData.topic.header = previousResult.topic.header;
-            structuredData.summary = [...previousResult.summary];
-        }
-
-        try {
-            const lines = responseText.split('\n');
-            let currentSection = '';
-            let isCapturingTopic = false;
-            let topicName = '';
-
-            for (const line of lines) {
-                const trimmedLine = line.trim();
-
-                // 섹션 헤더 감지
-                if (trimmedLine.startsWith('**Summary Overview**')) {
-                    currentSection = 'summary-overview';
-                    continue;
-                } else if (trimmedLine.startsWith('**Key Topic:')) {
-                    currentSection = 'topic';
-                    isCapturingTopic = true;
-                    topicName = trimmedLine.match(/\*\*Key Topic: (.+?)\*\*/)?.[1] || '';
-                    if (topicName) {
-                        structuredData.topic.header = topicName + ':';
-                    }
-                    continue;
-                } else if (trimmedLine.startsWith('**Extended Explanation**')) {
-                    currentSection = 'explanation';
-                    continue;
-                } else if (trimmedLine.startsWith('**Suggested Questions**')) {
-                    currentSection = 'questions';
-                    continue;
-                }
-
-                // 컨텐츠 파싱
-                if (trimmedLine.startsWith('-') && currentSection === 'summary-overview') {
-                    const summaryPoint = trimmedLine.substring(1).trim();
-                    if (summaryPoint && !structuredData.summary.includes(summaryPoint)) {
-                        // 기존 summary 업데이트 (최대 5개 유지)
-                        structuredData.summary.unshift(summaryPoint);
-                        if (structuredData.summary.length > 5) {
-                            structuredData.summary.pop();
-                        }
-                    }
-                } else if (trimmedLine.startsWith('-') && currentSection === 'topic') {
-                    const bullet = trimmedLine.substring(1).trim();
-                    if (bullet && structuredData.topic.bullets.length < 3) {
-                        structuredData.topic.bullets.push(bullet);
-                    }
-                } else if (currentSection === 'explanation' && trimmedLine) {
-                    // explanation을 topic bullets에 추가 (문장 단위로)
-                    const sentences = trimmedLine
-                        .split(/\.\s+/)
-                        .filter(s => s.trim().length > 0)
-                        .map(s => s.trim() + (s.endsWith('.') ? '' : '.'));
-
-                    sentences.forEach(sentence => {
-                        if (structuredData.topic.bullets.length < 3 && !structuredData.topic.bullets.includes(sentence)) {
-                            structuredData.topic.bullets.push(sentence);
-                        }
-                    });
-                } else if (trimmedLine.match(/^\d+\./) && currentSection === 'questions') {
-                    const question = trimmedLine.replace(/^\d+\.\s*/, '').trim();
-                    if (question && question.includes('?')) {
-                        structuredData.actions.push(`❓ ${question}`);
-                    }
-                }
-            }
-
-            // 기본 액션 추가
-            const defaultActions = ['✨ What should I say next?', '💬 Suggest follow-up questions'];
-            defaultActions.forEach(action => {
-                if (!structuredData.actions.includes(action)) {
-                    structuredData.actions.push(action);
-                }
-            });
-
-            // 액션 개수 제한
-            structuredData.actions = structuredData.actions.slice(0, 5);
-
-            // 유효성 검증 및 이전 데이터 병합
-            if (structuredData.summary.length === 0 && previousResult) {
-                structuredData.summary = previousResult.summary;
-            }
-            if (structuredData.topic.bullets.length === 0 && previousResult) {
-                structuredData.topic.bullets = previousResult.topic.bullets;
-            }
-        } catch (error) {
-            console.error('❌ Error parsing response text:', error);
-            // 에러 시 이전 결과 반환
-            return (
-                previousResult || {
-                    summary: [],
-                    topic: { header: 'Analysis in progress', bullets: [] },
-                    actions: ['✨ What should I say next?', '💬 Suggest follow-up questions'],
-                    followUps: ['✉️ Draft a follow-up email', '✅ Generate action items', '📝 Show summary'],
-                }
-            );
-        }
-
-        console.log('📊 Final structured data:', JSON.stringify(structuredData, null, 2));
-        return structuredData;
     }
 
     /**
