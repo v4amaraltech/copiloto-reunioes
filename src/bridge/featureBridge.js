@@ -99,6 +99,10 @@ module.exports = {
     ipcMain.handle('listen:isSessionActive', async () => await listenService.isSessionActive());
     ipcMain.handle('listen:setLeadBriefing', async (event, text) => listenService.setLeadBriefing(text));
     ipcMain.handle('listen:getLeadBriefing', async () => listenService.getLeadBriefing());
+    ipcMain.handle('v4:searchLeads', async (event, query) => {
+        const v4SyncService = require('../features/common/services/v4SyncService');
+        return await v4SyncService.searchLeads(query);
+    });
 
     // V4 Auth (Supabase) - login dos closers
     const v4AuthService = require('../features/common/services/v4AuthService');

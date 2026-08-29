@@ -284,6 +284,42 @@ export class SummaryView extends LitElement {
             background: rgba(255, 255, 255, 0.2);
         }
 
+        .lead-search-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .lead-search-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 11px;
+            padding: 5px 8px;
+        }
+
+        .lead-search-error {
+            font-size: 10px;
+            color: rgba(255, 160, 120, 0.95);
+            margin-top: 4px;
+        }
+
+        .lead-result {
+            margin-top: 4px;
+            padding: 5px 8px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 5px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+        }
+
+        .lead-result:hover {
+            background: rgba(0, 122, 255, 0.25);
+        }
+
         .suggestion-current {
             margin: 4px 12px 10px 12px;
             padding: 10px 12px;
@@ -352,6 +388,9 @@ export class SummaryView extends LitElement {
         isStreaming: { type: Boolean },
         suggestionHistory: { type: Array },
         copied: { type: Boolean },
+        leadResults: { type: Array },
+        leadSearchError: { type: String },
+        leadSearching: { type: Boolean },
     };
 
     constructor() {
@@ -370,6 +409,9 @@ export class SummaryView extends LitElement {
         this.isStreaming = false;
         this.suggestionHistory = [];
         this.copied = false;
+        this.leadResults = [];
+        this.leadSearchError = '';
+        this.leadSearching = false;
         this.hasCompletedRecording = false;
 
         // 마크다운 라이브러리 초기화
@@ -417,6 +459,38 @@ export class SummaryView extends LitElement {
             this.copied = true;
             setTimeout(() => (this.copied = false), 1200);
         } catch (_) {}
+    }
+
+    async searchLead() {
+        const input = this.shadowRoot.querySelector('.lead-search-input');
+        const query = input ? input.value.trim() : '';
+        if (query.length < 2) {
+            this.leadSearchError = 'Digite pelo menos 2 caracteres.';
+            return;
+        }
+        this.leadSearching = true;
+        this.leadSearchError = '';
+        this.leadResults = [];
+        try {
+            this.leadResults = await window.api.summaryView.searchLeads(query);
+            if (this.leadResults.length === 0) this.leadSearchError = 'Nenhum lead encontrado.';
+        } catch (err) {
+            this.leadSearchError = err.message || 'Erro na busca.';
+        } finally {
+            this.leadSearching = false;
+        }
+    }
+
+    async selectLead(result) {
+        try {
+            await window.api.summaryView.setLeadBriefing(result.briefing);
+            this.briefingText = result.briefing;
+            this.briefingSaved = true;
+            this.briefingOpen = false;
+            this.leadResults = [];
+        } catch (err) {
+            this.leadSearchError = err.message;
+        }
     }
 
     async saveBriefing() {
@@ -629,9 +703,28 @@ export class SummaryView extends LitElement {
                     </div>
                     ${this.briefingOpen
                         ? html`
+                              <div class="lead-search-row">
+                                  <input
+                                      class="lead-search-input"
+                                      type="text"
+                                      placeholder="Buscar lead por nome, empresa ou e-mail…"
+                                      @keydown=${e => { if (e.key === 'Enter') this.searchLead(); }}
+                                  />
+                                  <button class="briefing-save" ?disabled=${this.leadSearching} @click=${() => this.searchLead()}>
+                                      ${this.leadSearching ? '…' : 'Buscar'}
+                                  </button>
+                              </div>
+                              ${this.leadSearchError
+                                  ? html`<div class="lead-search-error">${this.leadSearchError}</div>`
+                                  : ''}
+                              ${this.leadResults.map(
+                                  r => html`
+                                      <div class="lead-result" @click=${() => this.selectLead(r)}>${r.label}</div>
+                                  `
+                              )}
                               <textarea
                                   class="briefing-textarea"
-                                  placeholder="Cole aqui o card de briefing do lead (nome, empresa, dor, origem, histórico)..."
+                                  placeholder="…ou cole aqui o card de briefing do lead manualmente."
                                   .value=${this.briefingText}
                               ></textarea>
                               <button class="briefing-save" @click=${() => this.saveBriefing()}>Salvar briefing</button>

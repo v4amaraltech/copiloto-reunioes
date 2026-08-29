@@ -10,6 +10,7 @@ const { V4_SUPABASE_URL } = require('../config/v4Config');
 
 const SAVE_TRANSCRIPT_URL = `${V4_SUPABASE_URL}/functions/v1/save-transcript`;
 const BRIEFING_LOOKUP_URL = `${V4_SUPABASE_URL}/functions/v1/briefing-lookup`;
+const LEADS_SEARCH_URL = `${V4_SUPABASE_URL}/functions/v1/leads-search`;
 
 class V4SyncService {
     constructor() {
@@ -145,6 +146,25 @@ class V4SyncService {
             throw new Error(result.error || `HTTP ${resp.status}`);
         }
         return result;
+    }
+
+    /** Busca manual de leads (fallback do briefing). Retorna [{lead_id, label, briefing}]. */
+    async searchLeads(query) {
+        const v4AuthService = require('./v4AuthService');
+        const token = await v4AuthService.getAccessToken();
+        if (!token) throw new Error('Faça login V4 nas Configurações primeiro.');
+
+        const resp = await fetch(LEADS_SEARCH_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ query }),
+        });
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) throw new Error(result.error || `HTTP ${resp.status}`);
+        return result.results || [];
     }
 
     /** Reenvia sessões pendentes (chamado no boot). */
