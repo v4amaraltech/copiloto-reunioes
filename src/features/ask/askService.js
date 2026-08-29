@@ -35,7 +35,14 @@ try {
 }
 let lastScreenshot = null;
 
+// Política V4 Amaral: o copiloto trabalha SOMENTE com áudio — nenhuma captura
+// de tela é feita, nem na função Ask. (Herança do Glass, desativada de propósito.)
+const SCREENSHOT_ENABLED = false;
+
 async function captureScreenshot(options = {}) {
+    if (!SCREENSHOT_ENABLED) {
+        return { success: false, error: 'Screenshot desativado (política áudio-somente)' };
+    }
     if (process.platform === 'darwin') {
         try {
             const tempPath = path.join(os.tmpdir(), `screenshot-${Date.now()}.jpg`);
