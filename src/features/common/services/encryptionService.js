@@ -11,7 +11,7 @@ try {
 
 const permissionService = require('./permissionService');
 
-const SERVICE_NAME = 'com.pickle.glass'; // A unique identifier for the app in the keychain
+const SERVICE_NAME = 'com.v4amaral.copiloto'; // A unique identifier for the app in the keychain
 let sessionKey = null; // In-memory fallback key
 
 const ALGORITHM = 'aes-256-gcm';

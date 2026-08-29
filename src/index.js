@@ -14,7 +14,7 @@ if (require('electron-squirrel-startup')) {
 const { app, BrowserWindow, shell, ipcMain, dialog, desktopCapturer, session } = require('electron');
 const { createWindows } = require('./window/windowManager.js');
 const listenService = require('./features/listen/listenService');
-const { initializeFirebase } = require('./features/common/services/firebaseClient');
+// Firebase removido: fork opera em modo local (auth futura via Supabase — ver docs/plano-copiloto-reunioes.md)
 const databaseInitializer = require('./features/common/services/databaseInitializer');
 const authService = require('./features/common/services/authService');
 const path = require('node:path');
@@ -182,9 +182,7 @@ app.whenReady().then(async () => {
         });
     });
 
-    // Initialize core services
-    initializeFirebase();
-    
+    // Initialize core services (local-only mode; Firebase removido)
     try {
         await databaseInitializer.initialize();
         console.log('>>> [index.js] Database initialized successfully');
@@ -495,69 +493,13 @@ async function handleCustomUrl(url) {
     }
 }
 
-async function handleFirebaseAuthCallback(params) {
-    const userRepository = require('./features/common/repositories/user');
-    const { token: idToken } = params;
-
-    if (!idToken) {
-        console.error('[Auth] Firebase auth callback is missing ID token.');
-        // No need to send IPC, the UI won't transition without a successful auth state change.
-        return;
-    }
-
-    console.log('[Auth] Received ID token from deep link, exchanging for custom token...');
-
-    try {
-        const functionUrl = 'https://us-west1-pickle-3651a.cloudfunctions.net/pickleGlassAuthCallback';
-        const response = await fetch(functionUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: idToken })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || 'Failed to exchange token.');
-        }
-
-        const { customToken, user } = data;
-        console.log('[Auth] Successfully received custom token for user:', user.uid);
-
-        const firebaseUser = {
-            uid: user.uid,
-            email: user.email || 'no-email@example.com',
-            displayName: user.name || 'User',
-            photoURL: user.picture
-        };
-
-        // 1. Sync user data to local DB
-        userRepository.findOrCreate(firebaseUser);
-        console.log('[Auth] User data synced with local DB.');
-
-        // 2. Sign in using the authService in the main process
-        await authService.signInWithCustomToken(customToken);
-        console.log('[Auth] Main process sign-in initiated. Waiting for onAuthStateChanged...');
-
-        // 3. Focus the app window
-        const { windowPool } = require('./window/windowManager.js');
-        const header = windowPool.get('header');
-        if (header) {
-            if (header.isMinimized()) header.restore();
-            header.focus();
-        } else {
-            console.error('[Auth] Header window not found after auth callback.');
-        }
-        
-    } catch (error) {
-        console.error('[Auth] Error during custom token exchange or sign-in:', error);
-        // The UI will not change, and the user can try again.
-        // Optionally, send a generic error event to the renderer.
-        const { windowPool } = require('./window/windowManager.js');
-        const header = windowPool.get('header');
-        if (header) {
-            header.webContents.send('auth-failed', { message: error.message });
-        }
+async function handleFirebaseAuthCallback(_params) {
+    // Login em nuvem desabilitado neste fork (modo local).
+    console.warn('[Auth] Cloud auth callback ignored: cloud login is disabled in this fork.');
+    const { windowPool } = require('./window/windowManager.js');
+    const header = windowPool.get('header');
+    if (header) {
+        header.webContents.send('auth-failed', { message: 'Cloud login is disabled in this fork.' });
     }
 }
 

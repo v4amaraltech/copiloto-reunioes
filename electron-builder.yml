@@ -1,7 +1,7 @@
 # electron-builder.yml
 
 # The unique application ID
-appId: com.pickle.glass
+appId: com.v4amaral.copiloto
 
 # The user-facing application name
 productName: Glass
@@ -9,8 +9,8 @@ productName: Glass
 # Publish configuration for GitHub releases
 publish:
     provider: github
-    owner: pickle-com
-    repo: glass
+    owner: v4amaraltech
+    repo: copiloto-reunioes
     releaseType: draft
 
 # Protocols configuration for deep linking

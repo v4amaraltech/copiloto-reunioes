@@ -29,16 +29,6 @@ const PROVIDERS = {
       ],
   },
 
-  'openai-glass': {
-      name: 'OpenAI (Glass)',
-      handler: () => require("./providers/openai"),
-      llmModels: [
-          { id: 'gpt-4.1-glass', name: 'GPT-4.1 (glass)' },
-      ],
-      sttModels: [
-          { id: 'gpt-4o-mini-transcribe-glass', name: 'GPT-4o Mini Transcribe (glass)' }
-      ],
-  },
   'gemini': {
       name: 'Gemini',
       handler: () => require("./providers/gemini"),
