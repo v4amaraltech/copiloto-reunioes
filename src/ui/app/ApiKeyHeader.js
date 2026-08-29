@@ -1941,7 +1941,7 @@ export class ApiKeyHeader extends LitElement {
                 <div class="header">
                     <div class="back-button" @click=${this.handleBack}>
                         <i class="arrow-icon-left"></i>
-                        <div class="back-button-text">Back</div>
+                        <div class="back-button-text">Voltar</div>
                     </div>
                     <div class="title">Use Personal API keys</div>
                 </div>
@@ -1949,7 +1949,7 @@ export class ApiKeyHeader extends LitElement {
                 <!-- LLM Section -->
                 <div class="section">
                     <div class="row">
-                        <div class="label">1. Select LLM Provider</div>
+                        <div class="label">1. Cérebro das sugestões (via login V4)</div>
                         <div class="provider-selector">
                             ${this.providers.llm.map(
                                 p => html`
@@ -1965,7 +1965,7 @@ export class ApiKeyHeader extends LitElement {
                         </div>
                     </div>
                     <div class="row">
-                        <div class="label">2. Enter API Key</div>
+                        <div class="label">2. Chave do cérebro</div>
                         ${this.llmProvider === 'ollama'
                             ? this._renderOllamaStateUI()
                             : html`
@@ -1973,7 +1973,7 @@ export class ApiKeyHeader extends LitElement {
                                       <input
                                           type="password"
                                           class="api-input ${this.llmError ? 'invalid' : ''}"
-                                          placeholder="Enter your ${llmProviderName} API key"
+                                          placeholder="Chave de API ${llmProviderName}"
                                           .value=${this.llmApiKey}
                                           @input=${e => {
                                               this.llmApiKey = e.target.value;
@@ -1990,7 +1990,7 @@ export class ApiKeyHeader extends LitElement {
                 <!-- STT Section -->
                 <div class="section">
                     <div class="row">
-                        <div class="label">3. Select STT Provider</div>
+                        <div class="label">3. Provedor de transcrição</div>
                         <div class="provider-selector">
                             ${this.providers.stt.map(
                                 p => html`
@@ -2006,7 +2006,7 @@ export class ApiKeyHeader extends LitElement {
                         </div>
                     </div>
                     <div class="row">
-                        <div class="label">4. Enter STT API Key</div>
+                        <div class="label">4. Chave da transcrição</div>
                         ${this.sttProvider === 'ollama'
                             ? html`
                                   <div class="api-input" style="background: transparent; border: none; text-align: right; color: #a0a0a0;">
@@ -2041,7 +2041,7 @@ export class ApiKeyHeader extends LitElement {
                                         <input
                                             type="password"
                                             class="api-input ${this.sttError ? 'invalid' : ''}"
-                                            placeholder="Enter your STT API key"
+                                            placeholder="Chave de API da transcrição (OpenAI)"
                                             .value=${this.sttApiKey}
                                             @input=${e => {
                                                 this.sttApiKey = e.target.value;
@@ -2062,7 +2062,7 @@ export class ApiKeyHeader extends LitElement {
                               ? `Installing ${this.installingModel}...`
                               : Object.keys(this.whisperInstallingModels).length > 0
                                 ? `Downloading...`
-                                : 'Confirm'}
+                                : 'Confirmar'}
                     </button>
                 </div>
 

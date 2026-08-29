@@ -261,14 +261,25 @@ class AskService {
 
             const conversationHistory = this._formatConversationForPrompt(conversationHistoryRaw);
 
-            const systemPrompt = getSystemPrompt('pickle_glass_analysis', conversationHistory, false);
+            // Briefing do lead entra no system prompt; a conversa recente vai na mensagem
+            // de usuário (mantém o system estável para o prompt caching).
+            let leadBriefing = '';
+            try {
+                leadBriefing = require('../listen/listenService').getLeadBriefing() || '';
+            } catch (_) { /* listen ainda não inicializado */ }
+
+            const systemPrompt = getSystemPrompt('v4_ask', leadBriefing, false);
+
+            const userText = conversationHistory && conversationHistory !== 'No conversation history available.'
+                ? `Conversa recente (me = closer, them = lead):\n${conversationHistory}\n\nPergunta do closer: ${userPrompt.trim()}`
+                : `Pergunta do closer: ${userPrompt.trim()}`;
 
             const messages = [
                 { role: 'system', content: systemPrompt },
                 {
                     role: 'user',
                     content: [
-                        { type: 'text', text: `User Request: ${userPrompt.trim()}` },
+                        { type: 'text', text: userText },
                     ],
                 },
             ];
