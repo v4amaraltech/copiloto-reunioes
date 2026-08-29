@@ -283,6 +283,62 @@ export class SummaryView extends LitElement {
         .briefing-save:hover {
             background: rgba(255, 255, 255, 0.2);
         }
+
+        .suggestion-current {
+            margin: 4px 12px 10px 12px;
+            padding: 10px 12px;
+            background: rgba(0, 122, 255, 0.14);
+            border: 1px solid rgba(0, 122, 255, 0.35);
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            line-height: 1.45;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .suggestion-current:hover {
+            background: rgba(0, 122, 255, 0.22);
+        }
+
+        .suggestion-current.streaming {
+            cursor: default;
+        }
+
+        .suggestion-cursor {
+            display: inline-block;
+            width: 7px;
+            height: 14px;
+            margin-left: 3px;
+            vertical-align: middle;
+            background: rgba(255, 255, 255, 0.85);
+            animation: blink 0.9s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .copied-badge {
+            font-size: 10px;
+            font-weight: 400;
+            color: rgba(120, 220, 140, 0.95);
+            margin-left: 6px;
+        }
+
+        .suggestion-history-item {
+            margin: 2px 12px;
+            padding: 6px 10px;
+            border-left: 2px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 12px;
+            line-height: 1.4;
+            cursor: pointer;
+        }
+
+        .suggestion-history-item:hover {
+            color: rgba(255, 255, 255, 0.85);
+        }
     `;
 
     static properties = {
@@ -292,6 +348,10 @@ export class SummaryView extends LitElement {
         briefingOpen: { type: Boolean },
         briefingText: { type: String },
         briefingSaved: { type: Boolean },
+        streamingText: { type: String },
+        isStreaming: { type: Boolean },
+        suggestionHistory: { type: Array },
+        copied: { type: Boolean },
     };
 
     constructor() {
@@ -306,6 +366,10 @@ export class SummaryView extends LitElement {
         this.briefingOpen = false;
         this.briefingText = '';
         this.briefingSaved = false;
+        this.streamingText = '';
+        this.isStreaming = false;
+        this.suggestionHistory = [];
+        this.copied = false;
         this.hasCompletedRecording = false;
 
         // 마크다운 라이브러리 초기화
@@ -322,14 +386,32 @@ export class SummaryView extends LitElement {
         super.connectedCallback();
         if (window.api) {
             window.api.summaryView.onSummaryUpdate((event, data) => {
+                const previous = this.structuredData?.suggestion;
+                if (previous && data?.suggestion && previous !== data.suggestion) {
+                    this.suggestionHistory = [previous, ...this.suggestionHistory].slice(0, 4);
+                }
                 this.structuredData = data;
+                this.isStreaming = false;
+                this.streamingText = '';
                 this.requestUpdate();
+            });
+            window.api.summaryView.onSummaryStream((event, { text, done }) => {
+                this.streamingText = text;
+                this.isStreaming = !done;
             });
             window.api.summaryView.getLeadBriefing().then(text => {
                 this.briefingText = text || '';
                 this.briefingSaved = !!text;
             }).catch(() => {});
         }
+    }
+
+    async copySuggestion(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            this.copied = true;
+            setTimeout(() => (this.copied = false), 1200);
+        } catch (_) {}
     }
 
     async saveBriefing() {
@@ -349,6 +431,7 @@ export class SummaryView extends LitElement {
         super.disconnectedCallback();
         if (window.api) {
             window.api.summaryView.removeAllSummaryUpdateListeners();
+            window.api.summaryView.removeAllSummaryStreamListeners();
         }
     }
 
@@ -529,13 +612,7 @@ export class SummaryView extends LitElement {
             return html`<div style="display: none;"></div>`;
         }
 
-        const data = this.structuredData || {
-            summary: [],
-            topic: { header: '', bullets: [] },
-            actions: [],
-        };
-
-        const hasAnyContent = data.summary.length > 0 || data.topic.bullets.length > 0 || data.actions.length > 0;
+        const data = this.structuredData || { suggestion: '' };
 
         return html`
             <div class="insights-container">
@@ -555,82 +632,29 @@ export class SummaryView extends LitElement {
                           `
                         : ''}
                 </div>
-                ${!hasAnyContent
-                    ? html`<div class="empty-state">No insights yet...</div>`
-                    : html`
-                        <insights-title>Current Summary</insights-title>
-                        ${data.summary.length > 0
-                            ? data.summary
-                                  .slice(0, 5)
-                                  .map(
-                                      (bullet, index) => html`
-                                          <div
-                                              class="markdown-content"
-                                              data-markdown-id="summary-${index}"
-                                              data-original-text="${bullet}"
-                                              @click=${() => this.handleMarkdownClick(bullet)}
-                                          >
-                                              ${bullet}
-                                          </div>
-                                      `
-                                  )
-                            : html` <div class="request-item">No content yet...</div> `}
-                        ${data.topic.header
-                            ? html`
-                                  <insights-title>${data.topic.header}</insights-title>
-                                  ${data.topic.bullets
-                                      .slice(0, 3)
-                                      .map(
-                                          (bullet, index) => html`
-                                              <div
-                                                  class="markdown-content"
-                                                  data-markdown-id="topic-${index}"
-                                                  data-original-text="${bullet}"
-                                                  @click=${() => this.handleMarkdownClick(bullet)}
-                                              >
-                                                  ${bullet}
-                                              </div>
-                                          `
-                                      )}
+                ${this.isStreaming
+                    ? html`
+                          <insights-title>Sugestão</insights-title>
+                          <div class="suggestion-current streaming">${this.streamingText}<span class="suggestion-cursor"></span></div>
+                      `
+                    : data.suggestion
+                      ? html`
+                            <insights-title>Sugestão ${this.copied ? html`<span class="copied-badge">copiado ✓</span>` : ''}</insights-title>
+                            <div class="suggestion-current" title="Clique para copiar" @click=${() => this.copySuggestion(data.suggestion)}>
+                                ${data.suggestion}
+                            </div>
+                        `
+                      : html`<div class="empty-state">Aguardando a fala do lead…</div>`}
+                ${this.suggestionHistory.length > 0
+                    ? html`
+                          <insights-title>Sugestões anteriores</insights-title>
+                          ${this.suggestionHistory.map(
+                              s => html`
+                                  <div class="suggestion-history-item" title="Clique para copiar" @click=${() => this.copySuggestion(s)}>${s}</div>
                               `
-                            : ''}
-                        ${data.actions.length > 0
-                            ? html`
-                                  <insights-title>Actions</insights-title>
-                                  ${data.actions
-                                      .slice(0, 5)
-                                      .map(
-                                          (action, index) => html`
-                                              <div
-                                                  class="markdown-content"
-                                                  data-markdown-id="action-${index}"
-                                                  data-original-text="${action}"
-                                                  @click=${() => this.handleMarkdownClick(action)}
-                                              >
-                                                  ${action}
-                                              </div>
-                                          `
-                                      )}
-                              `
-                            : ''}
-                        ${this.hasCompletedRecording && data.followUps && data.followUps.length > 0
-                            ? html`
-                                  <insights-title>Follow-Ups</insights-title>
-                                  ${data.followUps.map(
-                                      (followUp, index) => html`
-                                          <div
-                                              class="markdown-content"
-                                              data-markdown-id="followup-${index}"
-                                              data-original-text="${followUp}"
-                                              @click=${() => this.handleMarkdownClick(followUp)}
-                                          >
-                                              ${followUp}
-                                          </div>
-                                      `
-                                  )}
-                              `
-                            : ''}
-                    `}
+                          )}
+                      `
+                    : ''}
             </div>
         `;
     }
