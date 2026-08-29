@@ -3,7 +3,10 @@ const { spawn } = require('child_process');
 const { createSTT } = require('../../common/ai/factory');
 const modelStateService = require('../../common/services/modelStateService');
 
-const COMPLETION_DEBOUNCE_MS = 2000;
+// Canal "Me" (closer) mantém debounce longo; canal "Them" (lead) usa debounce curto
+// porque é ele quem dispara a sugestão — cada ms aqui entra na latência fala→sugestão.
+const MY_COMPLETION_DEBOUNCE_MS = 2000;
+const THEIR_COMPLETION_DEBOUNCE_MS = 700;
 
 // ── New heartbeat / renewal constants ────────────────────────────────────────────
 // Interval to send low-cost keep-alive messages so the remote service does not
@@ -135,7 +138,7 @@ class SttService {
         }
 
         if (this.myCompletionTimer) clearTimeout(this.myCompletionTimer);
-        this.myCompletionTimer = setTimeout(() => this.flushMyCompletion(), COMPLETION_DEBOUNCE_MS);
+        this.myCompletionTimer = setTimeout(() => this.flushMyCompletion(), MY_COMPLETION_DEBOUNCE_MS);
     }
 
     debounceTheirCompletion(text) {
@@ -146,7 +149,7 @@ class SttService {
         }
 
         if (this.theirCompletionTimer) clearTimeout(this.theirCompletionTimer);
-        this.theirCompletionTimer = setTimeout(() => this.flushTheirCompletion(), COMPLETION_DEBOUNCE_MS);
+        this.theirCompletionTimer = setTimeout(() => this.flushTheirCompletion(), THEIR_COMPLETION_DEBOUNCE_MS);
     }
 
     async initializeSttSessions(language = 'pt-BR') {

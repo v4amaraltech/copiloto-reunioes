@@ -1,6 +1,6 @@
 const { BrowserWindow } = require('electron');
 const { getSystemPrompt } = require('../../common/prompts/promptBuilder.js');
-const { createLLM } = require('../../common/ai/factory');
+const { createStreamingLLM } = require('../../common/ai/factory');
 const sessionRepository = require('../../common/repositories/session');
 const summaryRepository = require('./repositories');
 const modelStateService = require('../../common/services/modelStateService');
@@ -11,7 +11,9 @@ class SummaryService {
         this.analysisHistory = [];
         this.conversationHistory = [];
         this.currentSessionId = null;
-        
+        this.analysisInFlight = false;
+        this.analysisPending = false;
+
         // Callbacks
         this.onAnalysisComplete = null;
         this.onStatusUpdate = null;
@@ -42,7 +44,7 @@ class SummaryService {
         console.log(`📈 Total conversation history: ${this.conversationHistory.length} texts`);
 
         // Trigger analysis if needed
-        this.triggerAnalysisIfNeeded();
+        this.triggerAnalysisIfNeeded(speaker);
     }
 
     getConversationHistory() {
@@ -65,6 +67,43 @@ class SummaryService {
     formatConversationForPrompt(conversationTexts, maxTurns = 30) {
         if (conversationTexts.length === 0) return '';
         return conversationTexts.slice(-maxTurns).join('\n');
+    }
+
+    /**
+     * Lê um Response SSE (formato OpenAI, padrão de todos os providers do factory),
+     * emite tokens incrementais para a UI e retorna o texto completo.
+     */
+    async _readSseStream(response) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const lines = decoder.decode(value).split('\n').filter(line => line.trim() !== '');
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const data = line.substring(6);
+                if (data === '[DONE]') {
+                    this.sendToRenderer('summary-stream', { text: fullText, done: true });
+                    return fullText;
+                }
+                try {
+                    const token = JSON.parse(data).choices[0]?.delta?.content || '';
+                    if (token) {
+                        fullText += token;
+                        this.sendToRenderer('summary-stream', { text: fullText, done: false });
+                    }
+                } catch (_) {
+                    // linha SSE parcial/não-JSON — ignora
+                }
+            }
+        }
+
+        this.sendToRenderer('summary-stream', { text: fullText, done: true });
+        return fullText;
     }
 
     async makeOutlineAndRequests(conversationTexts, maxTurns = 30) {
@@ -137,18 +176,17 @@ Keep all points concise and build upon previous analysis if provided.`,
 
             console.log('🤖 Sending analysis request to AI...');
 
-            const llm = createLLM(modelInfo.provider, {
+            const llm = createStreamingLLM(modelInfo.provider, {
                 apiKey: modelInfo.apiKey,
                 model: modelInfo.model,
                 temperature: 0.7,
                 maxTokens: 1024,
-                usePortkey: modelInfo.provider === 'openai-glass',
-                portkeyVirtualKey: modelInfo.provider === 'openai-glass' ? modelInfo.apiKey : undefined,
             });
 
-            const completion = await llm.chat(messages);
-
-            const responseText = completion.content;
+            // Streaming: tokens chegam à UI conforme são gerados ('summary-stream'),
+            // e o texto completo segue para o parser/persistência ao final.
+            const response = await llm.streamChat(messages);
+            const responseText = await this._readSseStream(response);
             console.log(`✅ Analysis response received: ${responseText}`);
             const structuredData = this.parseResponseText(responseText, this.previousAnalysisResult);
 
@@ -300,24 +338,39 @@ Keep all points concise and build upon previous analysis if provided.`,
     }
 
     /**
-     * Triggers analysis when conversation history reaches 5 texts.
+     * Dispara a análise a cada turno finalizado do lead ("Them").
+     * Uma análise por vez: se o lead fala em rajada, as chamadas extras são
+     * coalescidas numa única re-análise ao fim da atual (sempre com o histórico mais recente).
      */
-    async triggerAnalysisIfNeeded() {
-        if (this.conversationHistory.length >= 5 && this.conversationHistory.length % 5 === 0) {
-            console.log(`Triggering analysis - ${this.conversationHistory.length} conversation texts accumulated`);
+    async triggerAnalysisIfNeeded(speaker) {
+        if ((speaker || '').toLowerCase() !== 'them') return;
 
-            const data = await this.makeOutlineAndRequests(this.conversationHistory);
-            if (data) {
-                console.log('Sending structured data to renderer');
-                this.sendToRenderer('summary-update', data);
-                
-                // Notify callback
-                if (this.onAnalysisComplete) {
-                    this.onAnalysisComplete(data);
+        if (this.analysisInFlight) {
+            this.analysisPending = true;
+            return;
+        }
+
+        this.analysisInFlight = true;
+        try {
+            do {
+                this.analysisPending = false;
+                console.log(`Triggering analysis - ${this.conversationHistory.length} conversation texts accumulated`);
+
+                const data = await this.makeOutlineAndRequests(this.conversationHistory);
+                if (data) {
+                    console.log('Sending structured data to renderer');
+                    this.sendToRenderer('summary-update', data);
+
+                    // Notify callback
+                    if (this.onAnalysisComplete) {
+                        this.onAnalysisComplete(data);
+                    }
+                } else {
+                    console.log('No analysis data returned');
                 }
-            } else {
-                console.log('No analysis data returned');
-            }
+            } while (this.analysisPending);
+        } finally {
+            this.analysisInFlight = false;
         }
     }
 
