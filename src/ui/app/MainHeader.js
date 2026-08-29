@@ -359,10 +359,10 @@ export class MainHeader extends LitElement {
 
     _getListenButtonText(status) {
         switch (status) {
-            case 'beforeSession': return 'Listen';
-            case 'inSession'   : return 'Stop';
-            case 'afterSession': return 'Done';
-            default            : return 'Listen';
+            case 'beforeSession': return 'Ouvir';
+            case 'inSession'   : return 'Parar';
+            case 'afterSession': return 'Fim';
+            default            : return 'Ouvir';
         }
     }
 
@@ -644,7 +644,7 @@ export class MainHeader extends LitElement {
 
                 <div class="header-actions ask-action" @click=${() => this._handleAskClick()}>
                     <div class="action-text">
-                        <div class="action-text-content">Ask</div>
+                        <div class="action-text-content">Perguntar</div>
                     </div>
                     <div class="icon-container">
                         ${this.renderShortcut(this.shortcuts.nextStep)}

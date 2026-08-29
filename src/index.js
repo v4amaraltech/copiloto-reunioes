@@ -13,6 +13,22 @@ if (require('electron-squirrel-startup')) {
 
 const { app, BrowserWindow, shell, ipcMain, dialog, desktopCapturer, session } = require('electron');
 
+// Migração one-shot do rebrand: move a pasta de dados "Glass" para "Copiloto V4"
+// para logins, keys e histórico sobreviverem à troca de nome do produto.
+try {
+    const fs = require('fs');
+    const path = require('path');
+    const appData = app.getPath('appData');
+    const oldDir = path.join(appData, 'Glass');
+    const newDir = path.join(appData, 'Copiloto V4');
+    if (fs.existsSync(oldDir) && !fs.existsSync(newDir)) {
+        fs.renameSync(oldDir, newDir);
+        console.log('[Rebrand] Dados migrados de "Glass" para "Copiloto V4"');
+    }
+} catch (err) {
+    console.warn('[Rebrand] Migração da pasta de dados falhou:', err.message);
+}
+
 // Dev: espelha os logs do main process em /tmp/copiloto-dev.log para diagnóstico,
 // independentemente de qual terminal iniciou o app.
 if (!app.isPackaged) {

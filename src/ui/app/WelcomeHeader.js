@@ -188,48 +188,27 @@ export class WelcomeHeader extends LitElement {
             <div class="container">
                 <button class="close-button" @click=${this.handleClose}>×</button>
                 <div class="header-section">
-                    <div class="title">Welcome to Glass</div>
-                    <div class="subtitle">Choose how to connect your AI model</div>
+                    <div class="title">Copiloto de Reuniões V4 Amaral</div>
+                    <div class="subtitle">Sugestões em tempo real para fechar mais vendas</div>
                 </div>
                 <div class="option-card">
                     <div class="divider"></div>
                     <div class="option-content">
-                        <div class="option-title">Quick start with default API key</div>
+                        <div class="option-title">Configuração inicial (uma vez só)</div>
                         <div class="option-description">
-                            100% free with Pickle's OpenAI key<br/>No personal data collected<br/>Sign up with Google in seconds
-                        </div>
-                    </div>
-                    <button class="action-button" @click=${this.loginCallback}>
-                        <div class="button-text">Open Browser to Log in</div>
-                        <div class="button-icon"><div class="arrow-icon"></div></div>
-                    </button>
-                </div>
-                <div class="option-card">
-                    <div class="divider"></div>
-                    <div class="option-content">
-                        <div class="option-title">Use Personal API keys</div>
-                        <div class="option-description">
-                            Costs may apply based on your API usage<br/>No personal data collected<br/>Use your own API keys (OpenAI, Gemini, etc.)
+                            1. Entre com sua conta V4 nas Configurações<br/>2. Cadastre a chave de transcrição (OpenAI)<br/>3. Clique em Ouvir quando a call começar
                         </div>
                     </div>
                     <button class="action-button" @click=${this.apiKeyCallback}>
-                        <div class="button-text">Enter Your API Key</div>
+                        <div class="button-text">Começar configuração</div>
                         <div class="button-icon"><div class="arrow-icon"></div></div>
                     </button>
                 </div>
                 <div class="footer">
-                    Glass does not collect your personal data —
-                    <span class="footer-link" @click=${this.openPrivacyPolicy}>See details</span>
+                    Uso interno V4 Amaral&Co — as sugestões são invisíveis no compartilhamento de tela
                 </div>
             </div>
         `;
-    }
-
-    openPrivacyPolicy() {
-        console.log('🔊 openPrivacyPolicy WelcomeHeader');
-        if (window.api?.common) {
-            window.api.common.openExternal('https://pickle.com/privacy-policy');
-        }
     }
 }
 

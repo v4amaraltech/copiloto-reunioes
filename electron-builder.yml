@@ -4,7 +4,7 @@
 appId: com.v4amaral.copiloto
 
 # The user-facing application name
-productName: Glass
+productName: Copiloto V4
 
 # Publish configuration for GitHub releases
 publish:
