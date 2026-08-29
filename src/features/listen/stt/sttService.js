@@ -106,7 +106,9 @@ class SttService {
     flushTheirCompletion() {
         const finalText = (this.theirCompletionBuffer + this.theirCurrentUtterance).trim();
         if (!this.modelInfo || !finalText) return;
-        
+
+        console.log(`[Latency] them-turn-final t=${Date.now()} chars=${finalText.length}`);
+
         // Notify completion callback
         if (this.onTranscriptionComplete) {
             this.onTranscriptionComplete('Them', finalText);

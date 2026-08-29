@@ -91,6 +91,7 @@ class SummaryService {
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let fullText = '';
+        let firstTokenLogged = false;
 
         while (true) {
             const { done, value } = await reader.read();
@@ -107,6 +108,12 @@ class SummaryService {
                 try {
                     const token = JSON.parse(data).choices[0]?.delta?.content || '';
                     if (token) {
+                        if (!firstTokenLogged) {
+                            firstTokenLogged = true;
+                            if (this._latencyT0) {
+                                console.log(`[Latency] first-token +${Date.now() - this._latencyT0}ms (turno→1º token na tela)`);
+                            }
+                        }
                         fullText += token;
                         this.sendToRenderer('summary-stream', { text: fullText, done: false });
                     }
@@ -242,9 +249,13 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
         try {
             do {
                 this.analysisPending = false;
+                this._latencyT0 = Date.now();
                 console.log(`Triggering analysis - ${this.conversationHistory.length} conversation texts accumulated`);
 
                 const data = await this.makeOutlineAndRequests(this.conversationHistory);
+                if (this._latencyT0) {
+                    console.log(`[Latency] suggestion-complete +${Date.now() - this._latencyT0}ms`);
+                }
                 if (data) {
                     console.log('Sending structured data to renderer');
                     this.sendToRenderer('summary-update', data);
