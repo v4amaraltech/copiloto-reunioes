@@ -84,8 +84,10 @@ class PermissionService {
         } catch (captureError) {
           console.log('[Permissions] Screen capture request triggered (expected to fail):', captureError.message);
         }
-        
-        // await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+
+        // Upstream deixava esta linha comentada — o botão "Grant Screen Recording"
+        // não fazia nada visível. Abrimos o painel certo dos Ajustes do Sistema.
+        await shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
       }
       return { success: true };
     } catch (error) {

@@ -12,6 +12,23 @@ if (require('electron-squirrel-startup')) {
 }
 
 const { app, BrowserWindow, shell, ipcMain, dialog, desktopCapturer, session } = require('electron');
+
+// Dev: espelha os logs do main process em /tmp/copiloto-dev.log para diagnóstico,
+// independentemente de qual terminal iniciou o app.
+if (!app.isPackaged) {
+    try {
+        const fs = require('fs');
+        const logStream = fs.createWriteStream('/tmp/copiloto-dev.log', { flags: 'a' });
+        logStream.write(`\n===== boot ${new Date().toISOString()} =====\n`);
+        const tee = orig => (...args) => {
+            try { logStream.write(args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') + '\n'); } catch (_) {}
+            orig(...args);
+        };
+        console.log = tee(console.log.bind(console));
+        console.error = tee(console.error.bind(console));
+        console.warn = tee(console.warn.bind(console));
+    } catch (_) { /* log espelhado é best-effort */ }
+}
 const { createWindows } = require('./window/windowManager.js');
 const listenService = require('./features/listen/listenService');
 // Firebase removido: fork opera em modo local (auth futura via Supabase — ver docs/plano-copiloto-reunioes.md)
@@ -216,8 +233,22 @@ app.whenReady().then(async () => {
         // Start web server and create windows ONLY after all initializations are successful
         WEB_PORT = await startWebStack();
         console.log('Web front-end listening on', WEB_PORT);
-        
+
         createWindows();
+
+        // macOS: registra o app no subsistema de gravação de tela no boot.
+        // Sem isso, o app nunca aparece na lista dos Ajustes nem dispara o aviso nativo.
+        if (process.platform === 'darwin') {
+            try {
+                const { systemPreferences, desktopCapturer } = require('electron');
+                if (systemPreferences.getMediaAccessStatus('screen') !== 'granted') {
+                    console.log('[Permissions] Screen not granted - triggering capture request to register app...');
+                    desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }).catch(() => {});
+                }
+            } catch (permErr) {
+                console.warn('[Permissions] Screen registration trigger failed:', permErr.message);
+            }
+        }
 
     } catch (err) {
         console.error('>>> [index.js] Database initialization failed - some features may not work', err);

@@ -112,6 +112,8 @@ Responsável de todas as tarefas técnicas: **Dev** (1 dev full-stack). PM valid
 
 **Backlog futuro (fora do projeto):** dashboard de calls no Supabase, resumo pós-call gerado por LLM, suporte a Windows, correção do histórico do Ask, Whisper local.
 
+**Backlog pós-piloto (registrado em 29/08/2026):** lembrete automático de ativação — via Calendar (reusa a tarefa 2.3), quando o closer estiver no horário de uma reunião com lead identificado, o app mostra um aviso "Você está em call com [lead] — ativar o copiloto?". Decisão de produto: a ativação continua **manual** no piloto (controle do closer + LGPD: nada de escutar antes do aviso de gravação na call); ativação 100% automática foi **descartada** pelo risco de gravar reuniões internas por engano. Reavaliar com o feedback dos 2 closers do piloto.
+
 ---
 
 ## 3. Pontos de atenção

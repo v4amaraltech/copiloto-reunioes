@@ -282,12 +282,16 @@ function createStreamingLLM({
             let chunkCount = 0
             let totalContent = ""
 
-            // Stream the response
+            // Stream the response.
+            // O system prompt (identidade + playbook + briefing) é estável durante a
+            // call inteira — cache_control corta ~90% do custo dele e reduz o TTFT.
             const stream = await client.messages.create({
               model: model,
               max_tokens: maxTokens,
               temperature: temperature,
-              system: systemPrompt || undefined,
+              system: systemPrompt
+                ? [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }]
+                : undefined,
               messages: anthropicMessages,
               stream: true,
             })

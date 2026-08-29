@@ -41,11 +41,11 @@ class OpenAIProvider {
 async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config }) {
   // A API realtime de transcrição da OpenAI espera ISO-639-1 ('pt'), não BCP-47 ('pt-BR')
   const isoLanguage = language.split('-')[0];
+  // API GA (a beta foi desligada pela OpenAI — erro beta_api_shape_disabled)
   const wsUrl = 'wss://api.openai.com/v1/realtime?intent=transcription';
 
   const headers = {
     'Authorization': `Bearer ${apiKey}`,
-    'OpenAI-Beta': 'realtime=v1',
   };
 
   const ws = new WebSocket(wsUrl, { headers });
@@ -57,26 +57,29 @@ async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config
       // O prompt em pt-BR ancora o idioma e reduz alucinações em inglês
       // ("Thank you for watching") que a família Whisper gera sobre silêncio/ruído.
       const ptPrompt = 'Transcrição de uma reunião de vendas em português do Brasil.';
-      console.log(`[OpenAI STT] Sessão configurada com language=${isoLanguage}`);
+      console.log(`[OpenAI STT] Sessão GA configurada com languages=[${isoLanguage}]`);
 
       const sessionConfig = {
-        type: 'transcription_session.update',
+        type: 'session.update',
         session: {
-          input_audio_format: 'pcm16',
-          input_audio_transcription: {
-            model: 'gpt-4o-mini-transcribe',
-            prompt: config.prompt || (isoLanguage === 'pt' ? ptPrompt : ''),
-            language: isoLanguage
+          type: 'transcription',
+          audio: {
+            input: {
+              format: { type: 'audio/pcm', rate: 24000 },
+              transcription: {
+                model: 'gpt-4o-mini-transcribe',
+                prompt: config.prompt || (isoLanguage === 'pt' ? ptPrompt : ''),
+                language: isoLanguage,
+              },
+              noise_reduction: { type: 'near_field' },
+              turn_detection: {
+                type: 'server_vad',
+                threshold: 0.5,
+                prefix_padding_ms: 200,
+                silence_duration_ms: 100,
+              },
+            },
           },
-          turn_detection: {
-            type: 'server_vad',
-            threshold: 0.5,
-            prefix_padding_ms: 200,
-            silence_duration_ms: 100,
-          },
-          input_audio_noise_reduction: {
-            type: 'near_field'
-          }
         }
       };
       
@@ -116,6 +119,8 @@ async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config
       });
     };
 
+    let debugEvtCount = 0;
+
     ws.onmessage = (event) => {
       // ── 종료·하트비트 패킷 필터링 ──────────────────────────────
       if (!event.data || event.data === 'null' || event.data === '[DONE]') return;
@@ -125,6 +130,12 @@ async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config
       catch { return; }                       // JSON 파싱 실패 무시
 
       if (!msg || typeof msg !== 'object') return;
+
+      // Telemetria temporária: primeiros eventos de cada sessão (diagnóstico GA)
+      if (debugEvtCount < 15) {
+        debugEvtCount++;
+        console.log(`[OpenAI STT evt] ${msg.type}${msg.error ? ' ' + JSON.stringify(msg.error) : ''}`);
+      }
 
       msg.provider = 'openai';                // ← 항상 명시
       callbacks.onmessage?.(msg);

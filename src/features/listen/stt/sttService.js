@@ -709,6 +709,10 @@ class SttService {
                         }
 
                         await this.theirSttSession.sendRealtimeInput(payload);
+                        this._themChunksSent = (this._themChunksSent || 0) + 1;
+                        if (this._themChunksSent % 100 === 1) {
+                            console.log(`[SttService] system-audio → Them STT: ${this._themChunksSent} chunks enviados`);
+                        }
                     } catch (err) {
                         console.error('Error sending system audio:', err.message);
                     }
