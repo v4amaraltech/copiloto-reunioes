@@ -13,6 +13,7 @@ class SummaryService {
         this.currentSessionId = null;
         this.analysisInFlight = false;
         this.analysisPending = false;
+        this.leadBriefing = '';
 
         // Callbacks
         this.onAnalysisComplete = null;
@@ -26,6 +27,19 @@ class SummaryService {
 
     setSessionId(sessionId) {
         this.currentSessionId = sessionId;
+    }
+
+    /**
+     * Briefing do lead da call atual (Sprint 1: colado manualmente na UI;
+     * Sprint 2: preenchido automaticamente via Calendar → Enriquece AI).
+     */
+    setLeadBriefing(text) {
+        this.leadBriefing = (text || '').trim();
+        console.log(`[SummaryService] Lead briefing ${this.leadBriefing ? `set (${this.leadBriefing.length} chars)` : 'cleared'}`);
+    }
+
+    getLeadBriefing() {
+        return this.leadBriefing;
     }
 
     sendToRenderer(channel, data) {
@@ -117,8 +131,8 @@ class SummaryService {
         const recentConversation = this.formatConversationForPrompt(conversationTexts, maxTurns);
 
         // System prompt estável (bom para prompt caching); a janela de conversa vai na mensagem de usuário.
-        // O briefing do lead entrará como customPrompt (seção "User-provided context") na tarefa 1.9.
-        const systemPrompt = getSystemPrompt('v4_sales_copilot', '', false);
+        // O briefing do lead entra na seção "User-provided context" do system prompt.
+        const systemPrompt = getSystemPrompt('v4_sales_copilot', this.leadBriefing, false);
 
         const lastSuggestion = this.previousAnalysisResult?.suggestion || '';
         const antiRepeat = lastSuggestion

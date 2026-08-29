@@ -231,12 +231,67 @@ export class SummaryView extends LitElement {
             font-size: 12px;
             font-style: italic;
         }
+
+        .briefing-section {
+            padding: 6px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .briefing-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4px 0;
+        }
+
+        .briefing-status {
+            font-size: 10px;
+            font-weight: 400;
+            color: rgba(120, 220, 140, 0.9);
+        }
+
+        .briefing-textarea {
+            width: 100%;
+            min-height: 90px;
+            box-sizing: border-box;
+            margin-top: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 11px;
+            font-family: inherit;
+            padding: 8px;
+            resize: vertical;
+        }
+
+        .briefing-save {
+            margin-top: 6px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 11px;
+            padding: 4px 12px;
+            cursor: pointer;
+        }
+
+        .briefing-save:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
     `;
 
     static properties = {
         structuredData: { type: Object },
         isVisible: { type: Boolean },
         hasCompletedRecording: { type: Boolean },
+        briefingOpen: { type: Boolean },
+        briefingText: { type: String },
+        briefingSaved: { type: Boolean },
     };
 
     constructor() {
@@ -248,6 +303,9 @@ export class SummaryView extends LitElement {
             followUps: [],
         };
         this.isVisible = true;
+        this.briefingOpen = false;
+        this.briefingText = '';
+        this.briefingSaved = false;
         this.hasCompletedRecording = false;
 
         // 마크다운 라이브러리 초기화
@@ -267,6 +325,23 @@ export class SummaryView extends LitElement {
                 this.structuredData = data;
                 this.requestUpdate();
             });
+            window.api.summaryView.getLeadBriefing().then(text => {
+                this.briefingText = text || '';
+                this.briefingSaved = !!text;
+            }).catch(() => {});
+        }
+    }
+
+    async saveBriefing() {
+        const textarea = this.shadowRoot.querySelector('.briefing-textarea');
+        const text = textarea ? textarea.value : '';
+        this.briefingText = text;
+        try {
+            await window.api.summaryView.setLeadBriefing(text);
+            this.briefingSaved = !!text.trim();
+            this.briefingOpen = false;
+        } catch (err) {
+            console.error('[SummaryView] Failed to save briefing:', err);
         }
     }
 
@@ -464,6 +539,22 @@ export class SummaryView extends LitElement {
 
         return html`
             <div class="insights-container">
+                <div class="briefing-section">
+                    <div class="briefing-toggle" @click=${() => (this.briefingOpen = !this.briefingOpen)}>
+                        <span>Briefing do lead</span>
+                        <span class="briefing-status">${this.briefingSaved ? '● carregado' : this.briefingOpen ? '▲' : '▼ colar'}</span>
+                    </div>
+                    ${this.briefingOpen
+                        ? html`
+                              <textarea
+                                  class="briefing-textarea"
+                                  placeholder="Cole aqui o card de briefing do lead (nome, empresa, dor, origem, histórico)..."
+                                  .value=${this.briefingText}
+                              ></textarea>
+                              <button class="briefing-save" @click=${() => this.saveBriefing()}>Salvar briefing</button>
+                          `
+                        : ''}
+                </div>
                 ${!hasAnyContent
                     ? html`<div class="empty-state">No insights yet...</div>`
                     : html`

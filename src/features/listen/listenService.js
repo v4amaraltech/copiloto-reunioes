@@ -228,6 +228,15 @@ class ListenService {
         return this.sttService.isSessionActive();
     }
 
+    setLeadBriefing(text) {
+        this.summaryService.setLeadBriefing(text);
+        return { success: true };
+    }
+
+    getLeadBriefing() {
+        return this.summaryService.getLeadBriefing();
+    }
+
     async closeSession() {
         try {
             this.sendToRenderer('change-listen-capture-state', { status: "stop" });

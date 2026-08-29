@@ -191,7 +191,11 @@ contextBridge.exposeInMainWorld('api', {
   summaryView: {
     // Message Handling
     sendQuestionFromSummary: (text) => ipcRenderer.invoke('ask:sendQuestionFromSummary', text),
-    
+
+    // Briefing do lead (Sprint 1: colado manualmente)
+    setLeadBriefing: (text) => ipcRenderer.invoke('listen:setLeadBriefing', text),
+    getLeadBriefing: () => ipcRenderer.invoke('listen:getLeadBriefing'),
+
     // Listeners
     onSummaryUpdate: (callback) => ipcRenderer.on('summary-update', callback),
     removeOnSummaryUpdate: (callback) => ipcRenderer.removeListener('summary-update', callback),
