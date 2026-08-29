@@ -43,7 +43,7 @@ const PROVIDERS = {
       name: 'Anthropic',
       handler: () => require("./providers/anthropic"),
       llmModels: [
-          { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
+          { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
       ],
       sttModels: [],
   },
