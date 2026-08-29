@@ -236,6 +236,12 @@ app.whenReady().then(async () => {
 
         createWindows();
 
+        // Reenvia transcrições de calls que falharam no upload (fila local)
+        setTimeout(() => {
+            require('./features/common/services/v4SyncService').retryPending()
+                .catch(err => console.error('[V4Sync] retryPending error:', err.message));
+        }, 10_000);
+
         // macOS: registra o app no subsistema de gravação de tela no boot.
         // Sem isso, o app nunca aparece na lista dos Ajustes nem dispara o aviso nativo.
         if (process.platform === 'darwin') {
