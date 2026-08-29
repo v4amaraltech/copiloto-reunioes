@@ -149,8 +149,9 @@ class SttService {
         this.theirCompletionTimer = setTimeout(() => this.flushTheirCompletion(), COMPLETION_DEBOUNCE_MS);
     }
 
-    async initializeSttSessions(language = 'en') {
-        const effectiveLanguage = process.env.OPENAI_TRANSCRIBE_LANG || language || 'en';
+    async initializeSttSessions(language = 'pt-BR') {
+        // OPENAI_TRANSCRIBE_LANG é um override global de idioma (aplica a todos os providers, apesar do nome)
+        const effectiveLanguage = process.env.OPENAI_TRANSCRIBE_LANG || language || 'pt-BR';
 
         const modelInfo = await modelStateService.getCurrentModelInfo('stt');
         if (!modelInfo || !modelInfo.apiKey) {

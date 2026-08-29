@@ -38,7 +38,9 @@ class OpenAIProvider {
  * @param {object} [opts.callbacks] - Event callbacks
  * @returns {Promise<object>} STT session
  */
-async function createSTT({ apiKey, language = 'en', callbacks = {}, ...config }) {
+async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config }) {
+  // A API realtime de transcrição da OpenAI espera ISO-639-1 ('pt'), não BCP-47 ('pt-BR')
+  const isoLanguage = language.split('-')[0];
   const wsUrl = 'wss://api.openai.com/v1/realtime?intent=transcription';
 
   const headers = {
@@ -59,7 +61,7 @@ async function createSTT({ apiKey, language = 'en', callbacks = {}, ...config })
           input_audio_transcription: {
             model: 'gpt-4o-mini-transcribe',
             prompt: config.prompt || '',
-            language: language || 'en'
+            language: isoLanguage
           },
           turn_detection: {
             type: 'server_vad',

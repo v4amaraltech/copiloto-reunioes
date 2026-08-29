@@ -154,7 +154,7 @@ class ListenService {
         }
     }
 
-    async initializeSession(language = 'en') {
+    async initializeSession(language = 'pt-BR') {
         if (this.isInitializingSession) {
             console.log('Session initialization already in progress.');
             return false;

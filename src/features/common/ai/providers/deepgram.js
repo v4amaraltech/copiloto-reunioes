@@ -38,15 +38,18 @@ class DeepgramProvider {
 
 function createSTT({
     apiKey,
-    language = 'en-US',
+    language = 'pt-BR',
     sampleRate = 24000,
     callbacks = {},
   }) {
+    // O nova-3 em streaming só transcreve idiomas além do inglês via modo
+    // multilíngue ('multi'); 'pt-BR' direto na querystring é rejeitado.
+    const dgLanguage = language.startsWith('en') ? language : 'multi';
     const qs = new URLSearchParams({
       model: 'nova-3',
       encoding: 'linear16',
       sample_rate: sampleRate.toString(),
-      language,
+      language: dgLanguage,
       smart_format: 'true',
       interim_results: 'true',
       channels: '1',

@@ -34,11 +34,12 @@ class GeminiProvider {
  * @param {object} [opts.callbacks] - Event callbacks
  * @returns {Promise<object>} STT session
  */
-async function createSTT({ apiKey, language = "en-US", callbacks = {}, ...config }) {
+async function createSTT({ apiKey, language = "pt-BR", callbacks = {}, ...config }) {
   const liveClient = new GoogleGenAI({ vertexai: false, apiKey })
 
-  // Language code BCP-47 conversion
-  const lang = language.includes("-") ? language : `${language}-US`
+  // Language code BCP-47 conversion (corrige bug do upstream: 'pt' virava 'pt-US')
+  const REGION_MAP = { pt: 'pt-BR', en: 'en-US', es: 'es-ES' }
+  const lang = language.includes("-") ? language : (REGION_MAP[language] || `${language}-US`)
 
   const session = await liveClient.live.connect({
 
