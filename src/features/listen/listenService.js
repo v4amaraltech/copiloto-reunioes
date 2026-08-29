@@ -162,7 +162,24 @@ class ListenService {
 
         this.isInitializingSession = true;
         this.sendToRenderer('session-initializing', true);
-        this.sendToRenderer('update-status', 'Initializing sessions...');
+        this.sendToRenderer('update-status', 'Iniciando sessão...');
+
+        // Briefing automático (Calendar → Enriquece AI), sem bloquear o início da escuta.
+        // Só busca se o closer não colou um briefing manual antes.
+        if (!this.summaryService.getLeadBriefing()) {
+            const v4SyncService = require('../common/services/v4SyncService');
+            v4SyncService.fetchBriefing().then(result => {
+                if (result?.matched && result.briefing) {
+                    this.summaryService.setLeadBriefing(result.briefing);
+                    this.sendToRenderer('briefing-updated', { briefing: result.briefing, event: result.event });
+                    console.log(`[ListenService] Briefing automático carregado (lead ${result.lead_id})`);
+                } else if (result?.found && !result.matched) {
+                    console.log('[ListenService] Reunião encontrada mas sem lead correspondente:', JSON.stringify(result.event?.attendees));
+                } else {
+                    console.log('[ListenService] Sem briefing automático:', result?.reason || result?.error || '');
+                }
+            }).catch(err => console.warn('[ListenService] Briefing automático falhou:', err.message));
+        }
 
         try {
             // Initialize database session

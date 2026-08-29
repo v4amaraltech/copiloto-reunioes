@@ -201,7 +201,9 @@ contextBridge.exposeInMainWorld('api', {
     removeOnSummaryUpdate: (callback) => ipcRenderer.removeListener('summary-update', callback),
     removeAllSummaryUpdateListeners: () => ipcRenderer.removeAllListeners('summary-update'),
     onSummaryStream: (callback) => ipcRenderer.on('summary-stream', callback),
-    removeAllSummaryStreamListeners: () => ipcRenderer.removeAllListeners('summary-stream')
+    removeAllSummaryStreamListeners: () => ipcRenderer.removeAllListeners('summary-stream'),
+    onBriefingUpdated: (callback) => ipcRenderer.on('briefing-updated', callback),
+    removeAllBriefingUpdatedListeners: () => ipcRenderer.removeAllListeners('briefing-updated')
   },
 
   // src/ui/settings/SettingsView.js

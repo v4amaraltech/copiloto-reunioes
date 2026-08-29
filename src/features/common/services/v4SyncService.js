@@ -9,6 +9,7 @@ const { app } = require('electron');
 const { V4_SUPABASE_URL } = require('../config/v4Config');
 
 const SAVE_TRANSCRIPT_URL = `${V4_SUPABASE_URL}/functions/v1/save-transcript`;
+const BRIEFING_LOOKUP_URL = `${V4_SUPABASE_URL}/functions/v1/briefing-lookup`;
 
 class V4SyncService {
     constructor() {
@@ -120,6 +121,30 @@ class V4SyncService {
             if (!skipQueueOnFail) this._enqueue(sessionId);
             return { success: false, error: err.message };
         }
+    }
+
+    /**
+     * Busca o briefing da próxima reunião: Calendar (n8n) → match no Enriquece AI.
+     * Retorna { found, matched, event, lead_id, briefing } ou { found:false }.
+     */
+    async fetchBriefing() {
+        const v4AuthService = require('./v4AuthService');
+        const token = await v4AuthService.getAccessToken();
+        if (!token) return { found: false, error: 'not_logged_in' };
+
+        const resp = await fetch(BRIEFING_LOOKUP_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: '{}',
+        });
+        const result = await resp.json().catch(() => ({}));
+        if (!resp.ok) {
+            throw new Error(result.error || `HTTP ${resp.status}`);
+        }
+        return result;
     }
 
     /** Reenvia sessões pendentes (chamado no boot). */

@@ -403,6 +403,11 @@ export class SummaryView extends LitElement {
                 this.briefingText = text || '';
                 this.briefingSaved = !!text;
             }).catch(() => {});
+            window.api.summaryView.onBriefingUpdated((event, { briefing }) => {
+                this.briefingText = briefing || '';
+                this.briefingSaved = !!briefing;
+                this.briefingOpen = false;
+            });
         }
     }
 
@@ -432,6 +437,7 @@ export class SummaryView extends LitElement {
         if (window.api) {
             window.api.summaryView.removeAllSummaryUpdateListeners();
             window.api.summaryView.removeAllSummaryStreamListeners();
+            window.api.summaryView.removeAllBriefingUpdatedListeners();
         }
     }
 
