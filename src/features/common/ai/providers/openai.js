@@ -54,13 +54,18 @@ async function createSTT({ apiKey, language = 'pt-BR', callbacks = {}, ...config
     ws.onopen = () => {
       console.log("WebSocket session opened.");
 
+      // O prompt em pt-BR ancora o idioma e reduz alucinações em inglês
+      // ("Thank you for watching") que a família Whisper gera sobre silêncio/ruído.
+      const ptPrompt = 'Transcrição de uma reunião de vendas em português do Brasil.';
+      console.log(`[OpenAI STT] Sessão configurada com language=${isoLanguage}`);
+
       const sessionConfig = {
         type: 'transcription_session.update',
         session: {
           input_audio_format: 'pcm16',
           input_audio_transcription: {
             model: 'gpt-4o-mini-transcribe',
-            prompt: config.prompt || '',
+            prompt: config.prompt || (isoLanguage === 'pt' ? ptPrompt : ''),
             language: isoLanguage
           },
           turn_detection: {
