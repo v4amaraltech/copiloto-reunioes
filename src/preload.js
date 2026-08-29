@@ -212,6 +212,11 @@ contextBridge.exposeInMainWorld('api', {
     firebaseLogout: () => ipcRenderer.invoke('firebase-logout'),
     startFirebaseAuth: () => ipcRenderer.invoke('start-firebase-auth'),
 
+    // V4 Auth (Supabase) - login dos closers
+    v4Login: (email, password) => ipcRenderer.invoke('v4auth:login', { email, password }),
+    v4Logout: () => ipcRenderer.invoke('v4auth:logout'),
+    v4GetState: () => ipcRenderer.invoke('v4auth:getState'),
+
     // Model & Provider Management
     getModelSettings: () => ipcRenderer.invoke('settings:get-model-settings'), // Facade call
     getProviderConfig: () => ipcRenderer.invoke('model:get-provider-config'),

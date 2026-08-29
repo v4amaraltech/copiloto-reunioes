@@ -1,7 +1,12 @@
 const { Anthropic } = require("@anthropic-ai/sdk")
+const { V4_LLM_PROXY_URL, V4_PROXY_KEY_PLACEHOLDER } = require('../../config/v4Config')
 
 class AnthropicProvider {
     static async validateApiKey(key) {
+        // Modo proxy V4: a credencial real é o JWT do closer, validado pela edge function.
+        if (key === V4_PROXY_KEY_PLACEHOLDER) {
+            return { success: true };
+        }
         if (!key || typeof key !== 'string' || !key.startsWith('sk-ant-')) {
             return { success: false, error: 'Invalid Anthropic API key format.' };
         }
@@ -68,22 +73,26 @@ async function createSTT({ apiKey, language = "en", callbacks = {}, ...config })
  * @param {number} [opts.maxTokens=4096] - Max tokens
  * @returns {object} LLM instance
  */
-// Proxy da V4 (edge function Supabase): quando configurado, a "apiKey" armazenada
-// é o JWT do closer (Supabase Auth) e a key real da Anthropic vive só no proxy.
-const V4_LLM_PROXY_URL = process.env.V4_LLM_PROXY_URL || '';
-
-function buildClientOptions(apiKey) {
-  if (V4_LLM_PROXY_URL) {
-    return { baseURL: V4_LLM_PROXY_URL, apiKey: null, authToken: apiKey };
+// Proxy da V4 (edge function Supabase): quando a "key" armazenada é o placeholder,
+// o client é montado por chamada com o JWT vivo do closer (renovado pelo v4AuthService)
+// e aponta para o proxy — a key real da Anthropic vive só na edge function.
+async function resolveClient(apiKey) {
+  if (apiKey === V4_PROXY_KEY_PLACEHOLDER) {
+    const v4AuthService = require('../../services/v4AuthService');
+    const token = await v4AuthService.getAccessToken();
+    if (!token) {
+      throw new Error('Sessão V4 expirada. Faça login novamente nas Configurações.');
+    }
+    return new Anthropic({ baseURL: V4_LLM_PROXY_URL, apiKey: null, authToken: token });
   }
-  return { apiKey };
+  return new Anthropic({ apiKey });
 }
 
 function createLLM({ apiKey, model = "claude-sonnet-4-6", temperature = 0.7, maxTokens = 4096, ...config }) {
-  const client = new Anthropic(buildClientOptions(apiKey))
 
   return {
     generateContent: async (parts) => {
+      const client = await resolveClient(apiKey)
       const messages = []
       let systemPrompt = ""
       const userContent = []
@@ -134,6 +143,7 @@ function createLLM({ apiKey, model = "claude-sonnet-4-6", temperature = 0.7, max
 
     // For compatibility with chat-style interfaces
     chat: async (messages) => {
+      const client = await resolveClient(apiKey)
       let systemPrompt = ""
       const anthropicMessages = []
 
@@ -211,11 +221,10 @@ function createStreamingLLM({
   maxTokens = 4096,
   ...config
 }) {
-  const client = new Anthropic(buildClientOptions(apiKey))
-
   return {
     streamChat: async (messages) => {
       console.log("[Anthropic Provider] Starting streaming request")
+      const client = await resolveClient(apiKey)
 
       let systemPrompt = ""
       const anthropicMessages = []

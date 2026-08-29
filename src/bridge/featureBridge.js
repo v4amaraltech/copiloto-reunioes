@@ -99,6 +99,12 @@ module.exports = {
     ipcMain.handle('listen:isSessionActive', async () => await listenService.isSessionActive());
     ipcMain.handle('listen:setLeadBriefing', async (event, text) => listenService.setLeadBriefing(text));
     ipcMain.handle('listen:getLeadBriefing', async () => listenService.getLeadBriefing());
+
+    // V4 Auth (Supabase) - login dos closers
+    const v4AuthService = require('../features/common/services/v4AuthService');
+    ipcMain.handle('v4auth:login', async (event, { email, password }) => await v4AuthService.login(email, password));
+    ipcMain.handle('v4auth:logout', async () => await v4AuthService.logout());
+    ipcMain.handle('v4auth:getState', async () => await v4AuthService.getState());
     ipcMain.handle('listen:changeSession', async (event, listenButtonText) => {
       console.log('[FeatureBridge] listen:changeSession from mainheader', listenButtonText);
       try {

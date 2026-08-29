@@ -483,6 +483,9 @@ export class SettingsView extends LitElement {
     static properties = {
         shortcuts: { type: Object, state: true },
         firebaseUser: { type: Object, state: true },
+        v4Auth: { type: Object, state: true },
+        v4LoginError: { type: String, state: true },
+        v4LoggingIn: { type: Boolean, state: true },
         isLoading: { type: Boolean, state: true },
         isContentProtectionOn: { type: Boolean, state: true },
         saving: { type: Boolean, state: true },
@@ -650,6 +653,42 @@ export class SettingsView extends LitElement {
         }
     }
 
+
+    async loadV4AuthState() {
+        try {
+            this.v4Auth = await window.api.settingsView.v4GetState();
+        } catch (_) {
+            this.v4Auth = { loggedIn: false, email: null };
+        }
+    }
+
+    async handleV4Login() {
+        const email = this.shadowRoot.querySelector('#v4-email')?.value || '';
+        const password = this.shadowRoot.querySelector('#v4-password')?.value || '';
+        if (!email || !password) {
+            this.v4LoginError = 'Informe e-mail e senha.';
+            return;
+        }
+        this.v4LoggingIn = true;
+        this.v4LoginError = '';
+        try {
+            const result = await window.api.settingsView.v4Login(email, password);
+            if (result.success) {
+                await this.loadV4AuthState();
+            } else {
+                this.v4LoginError = result.error || 'Falha no login.';
+            }
+        } catch (err) {
+            this.v4LoginError = err.message;
+        } finally {
+            this.v4LoggingIn = false;
+        }
+    }
+
+    async handleV4Logout() {
+        await window.api.settingsView.v4Logout();
+        await this.loadV4AuthState();
+    }
 
     async handleSaveKey(provider) {
         const input = this.shadowRoot.querySelector(`#key-input-${provider}`);
@@ -913,11 +952,12 @@ export class SettingsView extends LitElement {
 
     connectedCallback() {
         super.connectedCallback();
-        
+
         this.setupEventListeners();
         this.setupIpcListeners();
         this.setupWindowResize();
         this.loadAutoUpdateSetting();
+        this.loadV4AuthState();
         // Force one height calculation immediately (innerHeight may be 0 at first)
         setTimeout(() => this.updateScrollHeight(), 0);
     }
@@ -1191,6 +1231,29 @@ export class SettingsView extends LitElement {
 
         const loggedIn = !!this.firebaseUser;
 
+        const v4AuthHTML = html`
+            <div class="api-key-section">
+                ${this.v4Auth?.loggedIn
+                    ? html`
+                          <div style="font-size: 11px; color: rgba(120,220,140,0.95); margin-bottom: 4px;">
+                              Conta V4: ${this.v4Auth.email}
+                          </div>
+                          <button class="settings-button full-width" @click=${() => this.handleV4Logout()}>Sair da conta V4</button>
+                      `
+                    : html`
+                          <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Login V4 Amaral</div>
+                          <input type="email" id="v4-email" placeholder="e-mail corporativo" />
+                          <input type="password" id="v4-password" placeholder="senha" />
+                          ${this.v4LoginError
+                              ? html`<div style="font-size: 10px; color: rgba(255,120,120,0.95); margin-bottom: 4px;">${this.v4LoginError}</div>`
+                              : ''}
+                          <button class="settings-button full-width" ?disabled=${this.v4LoggingIn} @click=${() => this.handleV4Login()}>
+                              ${this.v4LoggingIn ? 'Entrando…' : 'Entrar'}
+                          </button>
+                      `}
+            </div>
+        `;
+
         const apiKeyManagementHTML = html`
             <div class="api-key-section">
                 ${Object.entries(this.providerConfig)
@@ -1366,6 +1429,7 @@ export class SettingsView extends LitElement {
                     </div>
                 </div>
 
+                ${v4AuthHTML}
                 ${apiKeyManagementHTML}
                 ${modelSelectionHTML}
 
