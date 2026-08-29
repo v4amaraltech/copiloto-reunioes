@@ -68,8 +68,19 @@ async function createSTT({ apiKey, language = "en", callbacks = {}, ...config })
  * @param {number} [opts.maxTokens=4096] - Max tokens
  * @returns {object} LLM instance
  */
+// Proxy da V4 (edge function Supabase): quando configurado, a "apiKey" armazenada
+// é o JWT do closer (Supabase Auth) e a key real da Anthropic vive só no proxy.
+const V4_LLM_PROXY_URL = process.env.V4_LLM_PROXY_URL || '';
+
+function buildClientOptions(apiKey) {
+  if (V4_LLM_PROXY_URL) {
+    return { baseURL: V4_LLM_PROXY_URL, apiKey: null, authToken: apiKey };
+  }
+  return { apiKey };
+}
+
 function createLLM({ apiKey, model = "claude-sonnet-4-6", temperature = 0.7, maxTokens = 4096, ...config }) {
-  const client = new Anthropic({ apiKey })
+  const client = new Anthropic(buildClientOptions(apiKey))
 
   return {
     generateContent: async (parts) => {
@@ -200,7 +211,7 @@ function createStreamingLLM({
   maxTokens = 4096,
   ...config
 }) {
-  const client = new Anthropic({ apiKey })
+  const client = new Anthropic(buildClientOptions(apiKey))
 
   return {
     streamChat: async (messages) => {
