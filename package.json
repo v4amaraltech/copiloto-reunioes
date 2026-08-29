@@ -13,7 +13,7 @@
         "build:win": "npm run build:all && electron-builder --win --x64 --publish never",
         "publish": "npm run build:all && electron-builder --config electron-builder.yml --publish always",
         "lint": "eslint --ext .ts,.tsx,.js .",
-        "postinstall": "electron-builder install-app-deps",
+        "postinstall": "patch-package && electron-builder install-app-deps",
         "build:renderer": "node build.js",
         "build:web": "cd pickleglass_web && npm run build && cd ..",
         "build:all": "npm run build:renderer && npm run build:web",
@@ -50,7 +50,6 @@
         "keytar": "^7.9.0",
         "node-fetch": "^2.7.0",
         "openai": "^4.70.0",
-        "portkey-ai": "^1.10.1",
         "react-hot-toast": "^2.5.2",
         "sharp": "^0.34.2",
         "validator": "^13.11.0",
@@ -64,6 +63,7 @@
         "electron-builder": "^26.0.12",
         "electron-reloader": "^1.2.3",
         "esbuild": "^0.25.5",
+        "patch-package": "^8.0.1",
         "prettier": "^3.6.2"
     },
     "optionalDependencies": {

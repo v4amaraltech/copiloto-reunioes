@@ -1,0 +1,39 @@
+diff --git a/node_modules/@electron/node-gyp/gyp/pylib/gyp/xcode_emulation.py b/node_modules/@electron/node-gyp/gyp/pylib/gyp/xcode_emulation.py
+index 5f2c097..d9a809c 100644
+--- a/node_modules/@electron/node-gyp/gyp/pylib/gyp/xcode_emulation.py
++++ b/node_modules/@electron/node-gyp/gyp/pylib/gyp/xcode_emulation.py
+@@ -1540,16 +1540,31 @@ def CLTVersion():
+     for key in [MAVERICKS_PKG_ID, STANDALONE_PKG_ID, FROM_XCODE_PKG_ID]:
+         try:
+             output = GetStdout(["/usr/sbin/pkgutil", "--pkg-info", key])
+-            return re.search(regex, output).groupdict()["version"]
++            match = re.search(regex, output)
++            if match:
++                return match.groupdict()["version"]
+         except GypError:
+             continue
+ 
+     regex = re.compile(r"Command Line Tools for Xcode\s+(?P<version>\S+)")
+     try:
+         output = GetStdout(["/usr/sbin/softwareupdate", "--history"])
+-        return re.search(regex, output).groupdict()["version"]
++        match = re.search(regex, output)
++        if match:
++            return match.groupdict()["version"]
+     except GypError:
+-        return None
++        pass
++
++    # CLT installed but no pkgutil receipt / softwareupdate history entry:
++    # fall back to the Apple clang major version (e.g. "17.0.0").
++    try:
++        output = GetStdout(["/usr/bin/clang", "--version"])
++        match = re.search(r"clang version (?P<version>\d+(\.\d+)*)", output)
++        if match:
++            return match.groupdict()["version"]
++    except GypError:
++        pass
++    return None
+ 
+ 
+ def GetStdoutQuiet(cmdlist):
