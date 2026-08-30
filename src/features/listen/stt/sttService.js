@@ -50,7 +50,8 @@ class SttService {
         this.modelInfo = null; 
     }
 
-    setCallbacks({ onTranscriptionComplete, onStatusUpdate }) {
+    setCallbacks({ onTranscriptionComplete, onStatusUpdate, onMeActivity }) {
+        this.onMeActivity = onMeActivity || null;
         this.onTranscriptionComplete = onTranscriptionComplete;
         this.onStatusUpdate = onStatusUpdate;
     }
@@ -133,6 +134,10 @@ class SttService {
     }
 
     debounceMyCompletion(text) {
+        // O closer está falando agora — o summaryService usa isso para
+        // segurar novas sugestões até ele terminar.
+        if (this.onMeActivity) this.onMeActivity();
+
         if (this.modelInfo?.provider === 'gemini') {
             this.myCompletionBuffer += text;
         } else {

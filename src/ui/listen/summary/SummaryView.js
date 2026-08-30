@@ -440,6 +440,15 @@ export class SummaryView extends LitElement {
                 this.requestUpdate();
             });
             window.api.summaryView.onSummaryStream((event, { text, done }) => {
+                // Início de uma sugestão nova: congela a atual no histórico na hora,
+                // para o texto que o closer está lendo nunca mudar sob os olhos dele.
+                if (!this.isStreaming && !done) {
+                    const atual = this.structuredData?.suggestion;
+                    if (atual) {
+                        this.suggestionHistory = [atual, ...this.suggestionHistory].slice(0, 4);
+                        this.structuredData = { ...this.structuredData, suggestion: '' };
+                    }
+                }
                 this.streamingText = text;
                 this.isStreaming = !done;
             });

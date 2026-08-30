@@ -25,6 +25,9 @@ class ListenService {
             },
             onStatusUpdate: (status) => {
                 this.sendToRenderer('update-status', status);
+            },
+            onMeActivity: () => {
+                this.summaryService.notifyMeActivity();
             }
         });
 

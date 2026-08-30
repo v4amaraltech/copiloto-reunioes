@@ -5,6 +5,12 @@ const sessionRepository = require('../../common/repositories/session');
 const summaryRepository = require('./repositories');
 const modelStateService = require('../../common/services/modelStateService');
 
+// Estabilidade das sugestões ao vivo (feedback do closer em call real):
+// - cooldown mínimo entre sugestões, para não metralhar a tela;
+// - segurar análise enquanto o closer está falando (ele não lê nada nessa hora).
+const SUGGESTION_COOLDOWN_MS = 8000;
+const ME_SPEAKING_HOLD_MS = 2500;
+
 class SummaryService {
     constructor() {
         this.previousAnalysisResult = null;
@@ -14,10 +20,18 @@ class SummaryService {
         this.analysisInFlight = false;
         this.analysisPending = false;
         this.leadBriefing = '';
+        this.lastSuggestionAt = 0;
+        this.lastMeActivityAt = 0;
+        this._deferTimer = null;
 
         // Callbacks
         this.onAnalysisComplete = null;
         this.onStatusUpdate = null;
+    }
+
+    /** Chamado pelo STT sempre que chega fala do closer (canal "Me"). */
+    notifyMeActivity() {
+        this.lastMeActivityAt = Date.now();
     }
 
     setCallbacks({ onAnalysisComplete, onStatusUpdate }) {
@@ -92,6 +106,24 @@ class SummaryService {
         const decoder = new TextDecoder();
         let fullText = '';
         let firstTokenLogged = false;
+        // Retém os primeiros caracteres: se a resposta for "MANTER" (sugestão
+        // anterior continua válida), nada é enviado à tela — zero ruído.
+        let emitindo = false;
+        let suprimido = false;
+        const HOLD_CHARS = 10;
+
+        const emitir = (done) => {
+            if (suprimido) return;
+            if (!emitindo) {
+                if (fullText.trim().toUpperCase().startsWith('MANTER')) {
+                    suprimido = true;
+                    return;
+                }
+                if (fullText.length < HOLD_CHARS && !done) return;
+                emitindo = true;
+            }
+            this.sendToRenderer('summary-stream', { text: fullText, done });
+        };
 
         while (true) {
             const { done, value } = await reader.read();
@@ -102,7 +134,7 @@ class SummaryService {
                 if (!line.startsWith('data: ')) continue;
                 const data = line.substring(6);
                 if (data === '[DONE]') {
-                    this.sendToRenderer('summary-stream', { text: fullText, done: true });
+                    emitir(true);
                     return fullText;
                 }
                 try {
@@ -115,7 +147,7 @@ class SummaryService {
                             }
                         }
                         fullText += token;
-                        this.sendToRenderer('summary-stream', { text: fullText, done: false });
+                        emitir(false);
                     }
                 } catch (_) {
                     // linha SSE parcial/não-JSON — ignora
@@ -123,7 +155,7 @@ class SummaryService {
             }
         }
 
-        this.sendToRenderer('summary-stream', { text: fullText, done: true });
+        emitir(true);
         return fullText;
     }
 
@@ -143,7 +175,7 @@ class SummaryService {
 
         const lastSuggestion = this.previousAnalysisResult?.suggestion || '';
         const antiRepeat = lastSuggestion
-            ? `Última sugestão dada ao closer (não repita a mesma ideia): "${lastSuggestion}"\n\n`
+            ? `Última sugestão dada ao closer: "${lastSuggestion}"\nSe essa sugestão AINDA é a melhor orientação para este momento da conversa, responda exatamente: MANTER\nCaso contrário, gere uma sugestão nova (não repita a mesma ideia).\n\n`
             : '';
 
         try {
@@ -187,6 +219,12 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
             console.log(`✅ Suggestion received: ${responseText}`);
 
             const suggestion = responseText.trim();
+
+            // "MANTER" = a sugestão anterior continua valendo; não mexe na tela.
+            if (suggestion.toUpperCase().startsWith('MANTER')) {
+                console.log('🟰 Sugestão mantida (MANTER) — tela intocada');
+                return null;
+            }
 
             // A resposta é a sugestão em texto puro (máx. 2 frases) — sem parser.
             // Shape compatível com a SummaryView atual até a tarefa 1.10 adaptar a UI.
@@ -233,22 +271,41 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
     }
 
     /**
-     * Dispara a análise a cada turno finalizado do lead ("Them").
-     * Uma análise por vez: se o lead fala em rajada, as chamadas extras são
-     * coalescidas numa única re-análise ao fim da atual (sempre com o histórico mais recente).
+     * Dispara a análise a cada turno finalizado do lead ("Them"), com estabilidade:
+     * - uma análise por vez (rajadas do lead são coalescidas numa re-análise);
+     * - cooldown mínimo entre sugestões exibidas;
+     * - se o closer está falando, a análise espera ele terminar.
      */
-    async triggerAnalysisIfNeeded(speaker) {
+    triggerAnalysisIfNeeded(speaker) {
         if ((speaker || '').toLowerCase() !== 'them') return;
+        this.analysisPending = true;
+        this._maybeRunAnalysis();
+    }
 
-        if (this.analysisInFlight) {
-            this.analysisPending = true;
+    _maybeRunAnalysis() {
+        if (this.analysisInFlight || !this.analysisPending) return;
+
+        const now = Date.now();
+        const cooldownLeft = this.lastSuggestionAt + SUGGESTION_COOLDOWN_MS - now;
+        const meHoldLeft = this.lastMeActivityAt + ME_SPEAKING_HOLD_MS - now;
+        const waitMs = Math.max(cooldownLeft, meHoldLeft, 0);
+
+        if (waitMs > 0) {
+            if (!this._deferTimer) {
+                const motivo = meHoldLeft > cooldownLeft ? 'closer falando' : 'cooldown';
+                console.log(`[SummaryService] Sugestão adiada ${waitMs}ms (${motivo})`);
+                this._deferTimer = setTimeout(() => {
+                    this._deferTimer = null;
+                    this._maybeRunAnalysis();
+                }, waitMs + 50);
+            }
             return;
         }
 
+        this.analysisPending = false;
         this.analysisInFlight = true;
-        try {
-            do {
-                this.analysisPending = false;
+        (async () => {
+            try {
                 this._latencyT0 = Date.now();
                 console.log(`Triggering analysis - ${this.conversationHistory.length} conversation texts accumulated`);
 
@@ -257,6 +314,7 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
                     console.log(`[Latency] suggestion-complete +${Date.now() - this._latencyT0}ms`);
                 }
                 if (data) {
+                    this.lastSuggestionAt = Date.now();
                     console.log('Sending structured data to renderer');
                     this.sendToRenderer('summary-update', data);
 
@@ -265,12 +323,14 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
                         this.onAnalysisComplete(data);
                     }
                 } else {
-                    console.log('No analysis data returned');
+                    console.log('No analysis data returned (ou MANTER)');
                 }
-            } while (this.analysisPending);
-        } finally {
-            this.analysisInFlight = false;
-        }
+            } finally {
+                this.analysisInFlight = false;
+                // Rajada acumulada durante a análise: reavalia respeitando o cooldown.
+                this._maybeRunAnalysis();
+            }
+        })();
     }
 
     getCurrentAnalysisData() {
