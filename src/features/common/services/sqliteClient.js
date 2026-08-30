@@ -220,21 +220,47 @@ class SQLiteClient {
 
         this.db.prepare(initUserQuery).run(this.defaultUserId, 'Default User', 'contact@pickle.com', now);
 
-        const defaultPresets = [
-            ['school', 'School', 'You are a school and lecture assistant. Your goal is to help the user, a student, understand academic material and answer questions.\n\nWhenever a question appears on the user\'s screen or is asked aloud, you provide a direct, step-by-step answer, showing all necessary reasoning or calculations.\n\nIf the user is watching a lecture or working through new material, you offer concise explanations of key concepts and clarify definitions as they come up.', 1],
-            ['meetings', 'Meetings', 'You are a meeting assistant. Your goal is to help the user capture key information during meetings and follow up effectively.\n\nYou help capture meeting notes, track action items, identify key decisions, and summarize important points discussed during meetings.', 1],
-            ['sales', 'Sales', 'You are a real-time AI sales assistant, and your goal is to help the user close deals during sales interactions.\n\nYou provide real-time sales support, suggest responses to objections, help identify customer needs, and recommend strategies to advance deals.', 1],
-            ['recruiting', 'Recruiting', 'You are a recruiting assistant. Your goal is to help the user interview candidates and evaluate talent effectively.\n\nYou help evaluate candidates, suggest interview questions, analyze responses, and provide insights about candidate fit for positions.', 1],
-            ['customer-support', 'Customer Support', 'You are a customer support assistant. Your goal is to help resolve customer issues efficiently and thoroughly.\n\nYou help diagnose customer problems, suggest solutions, provide step-by-step troubleshooting guidance, and ensure customer satisfaction.', 1],
+        // Agentes padrão do Copiloto V4 (substituem os presets em inglês herdados do Glass).
+        const legacyGlassPresetIds = ['school', 'meetings', 'sales', 'recruiting', 'customer-support'];
+        this.db.prepare(
+            `DELETE FROM prompt_presets WHERE is_default = 1 AND id IN (${legacyGlassPresetIds.map(() => '?').join(',')})`
+        ).run(...legacyGlassPresetIds);
+
+        const { profilePrompts } = require('../prompts/promptTemplates.js');
+
+        const prevendaPrompt = `Você apoia um PRÉ-VENDAS (SDR) da V4 Amaral&Co durante uma LIGAÇÃO com o lead. O objetivo desta ligação NÃO é vender: é qualificar o lead e agendar a reunião de diagnóstico com o closer, com dia e horário definidos ainda na ligação.
+
+ROTEIRO DA LIGAÇÃO:
+1. ABERTURA (máx. 30s): apresente-se, cite de onde veio o contato do lead (formulário, LeadBroker, indicação) e peça permissão objetiva: "Consigo te explicar em 2 minutos por que liguei — faz sentido?"
+2. QUALIFICAÇÃO: descubra segmento, faturamento aproximado, se já investe em marketing (quanto e com quem), qual a principal dor comercial e se quem está na linha é o decisor. Uma pergunta de cada vez.
+3. GERAÇÃO DE INTERESSE: conecte a dor declarada ao que a reunião de diagnóstico entrega ("nessa reunião a gente analisa seus números e te mostra onde está o vazamento"). Não apresente proposta, preço ou escopo — isso é papel do closer na reunião.
+4. AGENDAMENTO: ofereça duas opções fechadas de horário ("terça às 10h ou quarta às 15h?"). Confirme e-mail para o convite e reforce o compromisso ("posso contar com você nesse horário?").
+
+CONTORNO DE OBJEÇÕES DA LIGAÇÃO:
+- "Me manda por WhatsApp/e-mail" → "Te mando sim, mas o material genérico não mostra o seu cenário — por isso a reunião de 40 minutos vale mais que qualquer PDF. Qual horário fica melhor?"
+- "Não tenho interesse" → pergunte uma vez o motivo real (já tem agência? momento? experiência ruim?) e trate só essa objeção; se mantiver, agradeça e encerre com porta aberta.
+- "Quanto custa?" → "Depende do seu cenário — é exatamente isso que o especialista avalia na reunião, sem compromisso. Posso agendar?"
+- "Estou sem tempo agora" → seja direto: proponha já o agendamento ("então deixa eu ser rápido: qual dia dessa semana fica melhor pra uma conversa de 40 min?").
+
+REGRAS:
+- Sinal de compra ou lead qualificado e receptivo → vá direto para o agendamento, sem alongar a qualificação.
+- Use os dados que o lead declarou; NUNCA invente números ou promessas de resultado.`;
+
+        const defaultAgents = [
+            ['v4-closer-reuniao', 'Closer — Reunião (Playbook V4)', profilePrompts.v4_sales_copilot.content],
+            ['v4-prevenda-ligacao', 'Pré-venda — Ligação', prevendaPrompt],
         ];
 
-        const stmt = this.db.prepare(`
+        const insertAgent = this.db.prepare(`
             INSERT OR IGNORE INTO prompt_presets (id, uid, title, prompt, is_default, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, 1, ?)
         `);
+        // Agentes padrão são read-only na UI; manter o texto sincronizado com o código a cada boot.
+        const refreshAgent = this.db.prepare(`UPDATE prompt_presets SET title = ?, prompt = ? WHERE id = ? AND is_default = 1`);
 
-        for (const preset of defaultPresets) {
-            stmt.run(preset[0], this.defaultUserId, preset[1], preset[2], preset[3], now);
+        for (const [id, title, promptText] of defaultAgents) {
+            insertAgent.run(id, this.defaultUserId, title, promptText, now);
+            refreshAgent.run(title, promptText, id);
         }
 
         console.log('Default data initialized.');

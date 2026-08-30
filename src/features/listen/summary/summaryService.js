@@ -180,7 +180,20 @@ class SummaryService {
 
         // System prompt estável (bom para prompt caching); a janela de conversa vai na mensagem de usuário.
         // O briefing do lead entra na seção "User-provided context" do system prompt.
-        const systemPrompt = getSystemPrompt('v4_sales_copilot', this.leadBriefing, false);
+        // Se houver um agente ativo (criado pelo usuário), o prompt dele substitui o playbook padrão.
+        let agentPrompt = '';
+        try {
+            // require tardio para evitar ciclo de imports com settingsService
+            const settingsService = require('../../settings/settingsService');
+            const activeAgent = await settingsService.getActivePreset();
+            if (activeAgent?.prompt) {
+                agentPrompt = activeAgent.prompt;
+                console.log(`[SummaryService] Agente ativo: "${activeAgent.title}"`);
+            }
+        } catch (err) {
+            console.error('[SummaryService] Failed to load active agent, using default playbook:', err.message);
+        }
+        const systemPrompt = getSystemPrompt('v4_sales_copilot', this.leadBriefing, false, agentPrompt);
 
         const lastSuggestion = this.previousAnalysisResult?.suggestion || '';
         const antiRepeat = lastSuggestion

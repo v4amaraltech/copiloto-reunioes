@@ -187,11 +187,11 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                 ariaLabel: 'View my activity',
             },
             {
-                name: 'Personalize',
+                name: 'Agentes',
                 href: '/personalize',
                 icon: '/book.svg',
                 isLucide: false,
-                ariaLabel: 'Personalization settings',
+                ariaLabel: 'Gerenciar agentes',
             },
             {
                 name: 'Settings',

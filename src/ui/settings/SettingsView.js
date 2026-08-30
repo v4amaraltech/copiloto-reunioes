@@ -639,10 +639,7 @@ export class SettingsView extends LitElement {
             this.presets = presets || [];
             this.isContentProtectionOn = contentProtection;
             this.shortcuts = shortcuts || {};
-            if (this.presets.length > 0) {
-                const firstUserPreset = this.presets.find(p => p.is_default === 0);
-                if (firstUserPreset) this.selectedPreset = firstUserPreset;
-            }
+            this.selectedPreset = this.presets.find(p => p.is_active === 1) || null;
             
             // Load LocalAI status asynchronously to improve initial load time
             this.loadLocalAIStatus();
@@ -1014,13 +1011,7 @@ export class SettingsView extends LitElement {
             try {
                 const presets = await window.api.settingsView.getPresets();
                 this.presets = presets || [];
-                
-                // 현재 선택된 프리셋이 삭제되었는지 확인 (사용자 프리셋만 고려)
-                const userPresets = this.presets.filter(p => p.is_default === 0);
-                if (this.selectedPreset && !userPresets.find(p => p.id === this.selectedPreset.id)) {
-                    this.selectedPreset = userPresets.length > 0 ? userPresets[0] : null;
-                }
-                
+                this.selectedPreset = this.presets.find(p => p.is_active === 1) || null;
                 this.requestUpdate();
             } catch (error) {
                 console.error('[SettingsView] Failed to refresh presets:', error);
@@ -1129,9 +1120,16 @@ export class SettingsView extends LitElement {
     }
 
     async handlePresetSelect(preset) {
-        this.selectedPreset = preset;
-        // Here you could implement preset application logic
-        console.log('Selected preset:', preset);
+        // Clicar no agente ativo desativa; clicar em outro ativa.
+        const newActiveId = preset.is_active === 1 ? null : preset.id;
+        try {
+            await window.api.settingsView.setActivePreset(newActiveId);
+            this.presets = this.presets.map(p => ({ ...p, is_active: p.id === newActiveId ? 1 : 0 }));
+            this.selectedPreset = newActiveId ? { ...preset, is_active: 1 } : null;
+            this.requestUpdate();
+        } catch (error) {
+            console.error('[SettingsView] Failed to set active agent:', error);
+        }
     }
 
     handleMoveLeft() {
@@ -1454,27 +1452,27 @@ export class SettingsView extends LitElement {
                 <div class="preset-section">
                     <div class="preset-header">
                         <span class="preset-title">
-                            My Presets
-                            <span class="preset-count">(${this.presets.filter(p => p.is_default === 0).length})</span>
+                            Agentes
+                            <span class="preset-count">(${this.presets.length})</span>
                         </span>
                         <span class="preset-toggle" @click=${this.togglePresets}>
                             ${this.showPresets ? '▼' : '▶'}
                         </span>
                     </div>
-                    
+
                     <div class="preset-list ${this.showPresets ? '' : 'hidden'}">
-                        ${this.presets.filter(p => p.is_default === 0).length === 0 ? html`
+                        ${this.presets.length === 0 ? html`
                             <div class="no-presets-message">
-                                No custom presets yet.<br>
+                                Nenhum agente ainda.<br>
                                 <span class="web-link" @click=${this.handlePersonalize}>
-                                    Create your first preset
+                                    Criar seu primeiro agente
                                 </span>
                             </div>
-                        ` : this.presets.filter(p => p.is_default === 0).map(preset => html`
-                            <div class="preset-item ${this.selectedPreset?.id === preset.id ? 'selected' : ''}"
+                        ` : this.presets.map(preset => html`
+                            <div class="preset-item ${preset.is_active === 1 ? 'selected' : ''}"
                                  @click=${() => this.handlePresetSelect(preset)}>
                                 <span class="preset-name">${preset.title}</span>
-                                ${this.selectedPreset?.id === preset.id ? html`<span class="preset-status">Selected</span>` : ''}
+                                ${preset.is_active === 1 ? html`<span class="preset-status">Ativo</span>` : ''}
                             </div>
                         `)}
                     </div>

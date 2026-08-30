@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronDown, Plus, Copy } from 'lucide-react'
-import { getPresets, updatePreset, createPreset, PromptPreset } from '@/utils/api'
+import { ChevronDown, Plus, Copy, Trash2, Zap, ZapOff } from 'lucide-react'
+import { getPresets, updatePreset, createPreset, deletePreset, setActivePreset, PromptPreset } from '@/utils/api'
 
 export default function PersonalizePage() {
   const [allPresets, setAllPresets] = useState<PromptPreset[]>([]);
@@ -19,24 +19,24 @@ export default function PersonalizePage() {
         setLoading(true);
         const presetsData = await getPresets();
         setAllPresets(presetsData);
-        
+
         if (presetsData.length > 0) {
-          const firstUserPreset = presetsData.find(p => p.is_default === 0) || presetsData[0];
-          setSelectedPreset(firstUserPreset);
-          setEditorContent(firstUserPreset.prompt);
+          const initial = presetsData.find(p => p.is_active === 1) || presetsData[0];
+          setSelectedPreset(initial);
+          setEditorContent(initial.prompt);
         }
       } catch (error) {
-        console.error("Failed to fetch presets:", error);
+        console.error("Failed to fetch agents:", error);
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
   const handlePresetClick = (preset: PromptPreset) => {
-    if (isDirty && !window.confirm("You have unsaved changes. Are you sure you want to switch?")) {
+    if (isDirty && !window.confirm("Você tem alterações não salvas. Deseja trocar de agente mesmo assim?")) {
         return;
     }
     setSelectedPreset(preset);
@@ -51,22 +51,22 @@ export default function PersonalizePage() {
 
   const handleSave = async () => {
     if (!selectedPreset || saving || !isDirty) return;
-    
+
     if (selectedPreset.is_default === 1) {
-        alert("Default presets cannot be modified.");
+        alert("Agentes padrão não podem ser editados. Use o botão Duplicar para criar uma cópia editável.");
         return;
     }
-    
+
     try {
       setSaving(true);
-      await updatePreset(selectedPreset.id, { 
-        title: selectedPreset.title, 
-        prompt: editorContent 
+      await updatePreset(selectedPreset.id, {
+        title: selectedPreset.title,
+        prompt: editorContent
       });
 
-      setAllPresets(prev => 
-        prev.map(p => 
-          p.id === selectedPreset.id 
+      setAllPresets(prev =>
+        prev.map(p =>
+          p.id === selectedPreset.id
             ? { ...p, prompt: editorContent }
             : p
           )
@@ -74,40 +74,62 @@ export default function PersonalizePage() {
       setIsDirty(false);
     } catch (error) {
       console.error("Save failed:", error);
-      alert("Failed to save preset. See console for details.");
+      alert("Não foi possível salvar o agente. Veja o console para detalhes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleActivateToggle = async () => {
+    if (!selectedPreset || saving) return;
+
+    const isActive = selectedPreset.is_active === 1;
+    const newActiveId = isActive ? null : selectedPreset.id;
+
+    try {
+      setSaving(true);
+      await setActivePreset(newActiveId);
+      setAllPresets(prev => prev.map(p => ({ ...p, is_active: p.id === newActiveId ? 1 : 0 })));
+      setSelectedPreset(prev => prev ? { ...prev, is_active: prev.id === newActiveId ? 1 : 0 } : prev);
+    } catch (error) {
+      console.error("Failed to set active agent:", error);
+      alert("Não foi possível ativar o agente. Veja o console para detalhes.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleCreateNewPreset = async () => {
-    const title = prompt("Enter a title for the new preset:");
+    const title = prompt("Nome do novo agente (ex.: Pré-venda — Ligação):");
     if (!title) return;
-    
+
+    const initialPrompt = "Descreva aqui como este agente deve orientar as sugestões durante a conversa...";
+
     try {
       setSaving(true);
       const { id } = await createPreset({
         title,
-        prompt: "Enter your custom prompt here..."
+        prompt: initialPrompt
       });
-      
+
       const newPreset: PromptPreset = {
         id,
         uid: 'current_user',
         title,
-        prompt: "Enter your custom prompt here...",
+        prompt: initialPrompt,
         is_default: 0,
+        is_active: 0,
         created_at: Date.now(),
         sync_state: 'clean'
       };
-      
+
       setAllPresets(prev => [...prev, newPreset]);
       setSelectedPreset(newPreset);
       setEditorContent(newPreset.prompt);
       setIsDirty(false);
     } catch (error) {
-      console.error("Failed to create preset:", error);
-      alert("Failed to create preset. See console for details.");
+      console.error("Failed to create agent:", error);
+      alert("Não foi possível criar o agente. Veja o console para detalhes.");
     } finally {
       setSaving(false);
     }
@@ -115,33 +137,64 @@ export default function PersonalizePage() {
 
   const handleDuplicatePreset = async () => {
     if (!selectedPreset) return;
-    
-    const title = prompt("Enter a title for the duplicated preset:", `${selectedPreset.title} (Copy)`);
+
+    const title = prompt("Nome do agente duplicado:", `${selectedPreset.title} (cópia)`);
     if (!title) return;
-    
+
     try {
       setSaving(true);
       const { id } = await createPreset({
         title,
         prompt: editorContent
       });
-      
+
       const newPreset: PromptPreset = {
         id,
         uid: 'current_user',
         title,
         prompt: editorContent,
         is_default: 0,
+        is_active: 0,
         created_at: Date.now(),
         sync_state: 'clean'
       };
-      
+
       setAllPresets(prev => [...prev, newPreset]);
       setSelectedPreset(newPreset);
       setIsDirty(false);
     } catch (error) {
-      console.error("Failed to duplicate preset:", error);
-      alert("Failed to duplicate preset. See console for details.");
+      console.error("Failed to duplicate agent:", error);
+      alert("Não foi possível duplicar o agente. Veja o console para detalhes.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeletePreset = async () => {
+    if (!selectedPreset || saving) return;
+    if (selectedPreset.is_default === 1) return;
+
+    if (!window.confirm(`Excluir o agente "${selectedPreset.title}"? Essa ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const wasActive = selectedPreset.is_active === 1;
+      await deletePreset(selectedPreset.id);
+      if (wasActive) {
+        await setActivePreset(null);
+      }
+
+      const remaining = allPresets.filter(p => p.id !== selectedPreset.id);
+      setAllPresets(remaining);
+      const next = remaining[0] || null;
+      setSelectedPreset(next);
+      setEditorContent(next ? next.prompt : '');
+      setIsDirty(false);
+    } catch (error) {
+      console.error("Failed to delete agent:", error);
+      alert("Não foi possível excluir o agente. Veja o console para detalhes.");
     } finally {
       setSaving(false);
     }
@@ -150,10 +203,12 @@ export default function PersonalizePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-gray-500">Carregando...</div>
       </div>
     );
   }
+
+  const activeAgent = allPresets.find(p => p.is_active === 1) || null;
 
   return (
     <div className="flex flex-col h-full">
@@ -161,8 +216,12 @@ export default function PersonalizePage() {
         <div className="px-8 pt-8 pb-6">
           <div className="flex justify-between items-start">
             <div>
-              <p className="text-sm text-gray-500 mb-2">Presets</p>
-              <h1 className="text-3xl font-bold text-gray-900">Personalize</h1>
+              <p className="text-sm text-gray-500 mb-2">
+                {activeAgent
+                  ? <>Agente ativo: <span className="font-medium text-green-700">{activeAgent.title}</span></>
+                  : 'Nenhum agente ativo — as sugestões usam o playbook padrão (Closer)'}
+              </p>
+              <h1 className="text-3xl font-bold text-gray-900">Agentes</h1>
             </div>
             <div className="flex gap-2">
               <button
@@ -171,16 +230,40 @@ export default function PersonalizePage() {
                 className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
-                New Preset
+                Novo agente
               </button>
+              {selectedPreset && (
+                <button
+                  onClick={handleActivateToggle}
+                  disabled={saving}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 ${
+                    selectedPreset.is_active === 1
+                      ? 'bg-amber-500 text-white hover:bg-amber-600'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
+                >
+                  {selectedPreset.is_active === 1 ? <ZapOff className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
+                  {selectedPreset.is_active === 1 ? 'Desativar' : 'Ativar'}
+                </button>
+              )}
               {selectedPreset && (
                 <button
                   onClick={handleDuplicatePreset}
                   disabled={saving}
-                  className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
-                  Duplicate
+                  Duplicar
+                </button>
+              )}
+              {selectedPreset && selectedPreset.is_default === 0 && (
+                <button
+                  onClick={handleDeletePreset}
+                  disabled={saving}
+                  className="px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 bg-red-600 text-white hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
                 </button>
               )}
               <button
@@ -189,12 +272,12 @@ export default function PersonalizePage() {
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                   !isDirty && !saving
                     ? 'bg-gray-500 text-white cursor-default'
-                    : saving 
-                      ? 'bg-gray-400 text-white cursor-not-allowed' 
+                    : saving
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
                       : 'bg-gray-600 text-white hover:bg-gray-700'
                 }`}
               >
-                {!isDirty && !saving ? 'Saved' : saving ? 'Saving...' : 'Save'}
+                {!isDirty && !saving ? 'Salvo' : saving ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>
@@ -208,13 +291,13 @@ export default function PersonalizePage() {
               onClick={() => setShowPresets(!showPresets)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-800 text-sm font-medium transition-colors"
             >
-              <ChevronDown 
+              <ChevronDown
                 className={`h-4 w-4 transition-transform duration-200 ${showPresets ? 'rotate-180' : ''}`}
               />
-              {showPresets ? 'Hide Presets' : 'Show Presets'}
+              {showPresets ? 'Ocultar agentes' : 'Mostrar agentes'}
             </button>
           </div>
-          
+
           {showPresets && (
             <div className="grid grid-cols-5 gap-4 mb-6">
               {allPresets.map((preset) => (
@@ -230,12 +313,19 @@ export default function PersonalizePage() {
                     }
                   `}
                 >
-                  {preset.is_default === 1 && (
-                    <div className="absolute top-2 right-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                      Default
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-gray-900 mb-3 text-center text-sm">
+                  <div className="absolute top-2 right-2 flex gap-1">
+                    {preset.is_active === 1 && (
+                      <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+                        Ativo
+                      </div>
+                    )}
+                    {preset.is_default === 1 && (
+                      <div className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                        Padrão
+                      </div>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-3 text-center text-sm mt-4">
                     {preset.title}
                   </h3>
                   <p className="text-xs text-gray-600 leading-relaxed flex-1 overflow-hidden">
@@ -255,8 +345,8 @@ export default function PersonalizePage() {
               <div className="flex items-center gap-2">
                 <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
                 <p className="text-sm text-yellow-800">
-                  <strong>This is a default preset and cannot be edited.</strong> 
-                  Use the "Duplicate" button above to create an editable copy, or create a new preset.
+                  <strong>Este é um agente padrão e não pode ser editado.</strong>{' '}
+                  Você pode ativá-lo como está, ou usar o botão "Duplicar" para criar uma cópia editável.
                 </p>
               </div>
             </div>
@@ -265,11 +355,11 @@ export default function PersonalizePage() {
             value={editorContent}
             onChange={handleEditorChange}
             className="w-full flex-1 text-sm text-gray-900 border-0 resize-none focus:outline-none bg-transparent font-mono leading-relaxed"
-            placeholder="Select a preset or type directly..."
+            placeholder="Selecione um agente ou digite o prompt diretamente..."
             readOnly={selectedPreset?.is_default === 1}
           />
         </div>
       </div>
     </div>
   );
-} 
+}

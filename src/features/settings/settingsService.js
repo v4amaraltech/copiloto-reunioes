@@ -259,10 +259,56 @@ async function getPresets() {
     try {
         // The adapter now handles which presets to return based on login state.
         const presets = await settingsRepository.getPresets();
-        return presets;
+        // Marca qual agente está ativo (o id ativo vive no electron-store local).
+        const activeId = getActivePresetId();
+        return (presets || []).map(p => ({ ...p, is_active: p.id === activeId ? 1 : 0 }));
     } catch (error) {
         console.error('[SettingsService] Error getting presets:', error);
         return [];
+    }
+}
+
+function _userSettingsKey() {
+    const uid = authService.getCurrentUserId();
+    return uid ? `users.${uid}` : 'users.default';
+}
+
+/** Id do agente (preset) ativo deste dispositivo, ou null. */
+function getActivePresetId() {
+    try {
+        const saved = store.get(_userSettingsKey(), {});
+        return saved.activePresetId || null;
+    } catch (error) {
+        console.error('[SettingsService] Error reading active preset id:', error);
+        return null;
+    }
+}
+
+/** Retorna o preset (agente) ativo completo, ou null se nenhum estiver ativo. */
+async function getActivePreset() {
+    try {
+        const activeId = getActivePresetId();
+        if (!activeId) return null;
+        const presets = await settingsRepository.getPresets();
+        return (presets || []).find(p => p.id === activeId) || null;
+    } catch (error) {
+        console.error('[SettingsService] Error getting active preset:', error);
+        return null;
+    }
+}
+
+/** Ativa um agente (preset) pelo id; passe null para desativar todos. */
+async function setActivePreset(id) {
+    try {
+        const key = _userSettingsKey();
+        const saved = store.get(key, {});
+        store.set(key, { ...saved, activePresetId: id || null });
+        notifyPresetUpdate('activated', id || null);
+        console.log(`[SettingsService] Active preset ${id ? `set to ${id}` : 'cleared'}`);
+        return { success: true };
+    } catch (error) {
+        console.error('[SettingsService] Error setting active preset:', error);
+        return { success: false, error: error.message };
     }
 }
 
@@ -451,6 +497,9 @@ module.exports = {
     createPreset,
     updatePreset,
     deletePreset,
+    getActivePresetId,
+    getActivePreset,
+    setActivePreset,
     saveApiKey,
     removeApiKey,
     updateContentProtection,

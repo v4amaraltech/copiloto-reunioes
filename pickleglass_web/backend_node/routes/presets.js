@@ -12,6 +12,16 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.post('/active', async (req, res) => {
+    try {
+        await ipcRequest(req, 'set-active-preset', req.body.id || null);
+        res.json({ message: 'Active preset updated successfully' });
+    } catch (error) {
+        console.error('Failed to set active preset via IPC:', error);
+        res.status(500).json({ error: 'Failed to set active preset' });
+    }
+});
+
 router.post('/', async (req, res) => {
     try {
         const result = await ipcRequest(req, 'create-preset', req.body);

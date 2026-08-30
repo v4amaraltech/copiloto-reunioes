@@ -452,8 +452,12 @@ function setupWebDataHandlers() {
 
                 // PRESET
                 case 'get-presets':
-                    // Adapter injects UID
-                    result = await presetRepository.getPresets();
+                    // settingsService decora cada preset com is_active (agente ativo)
+                    result = await settingsService.getPresets();
+                    break;
+                case 'set-active-preset':
+                    // payload = id do agente, ou null para desativar
+                    result = await settingsService.setActivePreset(payload);
                     break;
                 case 'create-preset':
                     // Adapter injects UID
@@ -481,8 +485,8 @@ function setupWebDataHandlers() {
                         promises.profile = userRepository.getById();
                     }
                     if (includes.includes('presets')) {
-                        // Adapter injects UID
-                        promises.presets = presetRepository.getPresets();
+                        // settingsService decora cada preset com is_active (agente ativo)
+                        promises.presets = settingsService.getPresets();
                     }
                     if (includes.includes('sessions')) {
                         // Adapter injects UID

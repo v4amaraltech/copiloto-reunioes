@@ -74,6 +74,7 @@ export interface PromptPreset {
   title: string;
   prompt: string;
   is_default: 0 | 1;
+  is_active?: 0 | 1;
   created_at: number;
   sync_state: 'clean' | 'dirty';
 }
@@ -526,6 +527,14 @@ export const updatePreset = async (id: string, data: { title: string, prompt: st
       throw new Error(`Failed to update preset: ${response.status} ${errorText}`);
     }
   }
+};
+
+export const setActivePreset = async (id: string | null): Promise<void> => {
+  const response = await apiCall(`/api/presets/active`, {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+  });
+  if (!response.ok) throw new Error('Failed to set active preset');
 };
 
 export const deletePreset = async (id: string): Promise<void> => {

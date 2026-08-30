@@ -268,7 +268,16 @@ class AskService {
                 leadBriefing = require('../listen/listenService').getLeadBriefing() || '';
             } catch (_) { /* listen ainda não inicializado */ }
 
-            const systemPrompt = getSystemPrompt('v4_ask', leadBriefing, false);
+            // Agente ativo entra como contexto adicional na resposta do Ask.
+            let agentContext = '';
+            try {
+                const activeAgent = await require('../settings/settingsService').getActivePreset();
+                if (activeAgent?.prompt) {
+                    agentContext = `Playbook do agente ativo ("${activeAgent.title}"), escolhido pelo usuário — responda alinhado a ele:\n${activeAgent.prompt}\n\n`;
+                }
+            } catch (_) { /* sem agente ativo */ }
+
+            const systemPrompt = getSystemPrompt('v4_ask', agentContext + leadBriefing, false);
 
             const userText = conversationHistory && conversationHistory !== 'No conversation history available.'
                 ? `Conversa recente (me = closer, them = lead):\n${conversationHistory}\n\nPergunta do closer: ${userPrompt.trim()}`
