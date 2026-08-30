@@ -35,9 +35,9 @@ try {
 }
 let lastScreenshot = null;
 
-// Política V4 Amaral: o copiloto trabalha SOMENTE com áudio — nenhuma captura
-// de tela é feita, nem na função Ask. (Herança do Glass, desativada de propósito.)
-const SCREENSHOT_ENABLED = false;
+// Política V4 Amaral: além do áudio, o Perguntar envia uma captura da tela
+// como contexto (reativado a pedido — antes era áudio-somente).
+const SCREENSHOT_ENABLED = true;
 
 async function captureScreenshot(options = {}) {
     if (!SCREENSHOT_ENABLED) {
