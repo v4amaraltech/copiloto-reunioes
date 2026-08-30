@@ -6,7 +6,9 @@ const modelStateService = require('../../common/services/modelStateService');
 // Canal "Me" (closer) mantém debounce longo; canal "Them" (lead) usa debounce curto
 // porque é ele quem dispara a sugestão — cada ms aqui entra na latência fala→sugestão.
 const MY_COMPLETION_DEBOUNCE_MS = 2000;
-const THEIR_COMPLETION_DEBOUNCE_MS = 700;
+// 1500ms: pausa de respiração/pensamento do lead não pode virar "fim de turno"
+// (com 700ms, fragmentos de 7 chars disparavam sugestão no meio da fala dele).
+const THEIR_COMPLETION_DEBOUNCE_MS = 1500;
 
 // ── New heartbeat / renewal constants ────────────────────────────────────────────
 // Interval to send low-cost keep-alive messages so the remote service does not
@@ -50,8 +52,9 @@ class SttService {
         this.modelInfo = null; 
     }
 
-    setCallbacks({ onTranscriptionComplete, onStatusUpdate, onMeActivity }) {
+    setCallbacks({ onTranscriptionComplete, onStatusUpdate, onMeActivity, onThemActivity }) {
         this.onMeActivity = onMeActivity || null;
+        this.onThemActivity = onThemActivity || null;
         this.onTranscriptionComplete = onTranscriptionComplete;
         this.onStatusUpdate = onStatusUpdate;
     }
@@ -149,6 +152,9 @@ class SttService {
     }
 
     debounceTheirCompletion(text) {
+        // O lead está falando — segura sugestões até ele realmente terminar.
+        if (this.onThemActivity) this.onThemActivity();
+
         if (this.modelInfo?.provider === 'gemini') {
             this.theirCompletionBuffer += text;
         } else {

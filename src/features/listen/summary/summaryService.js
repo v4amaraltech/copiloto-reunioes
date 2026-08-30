@@ -10,6 +10,9 @@ const modelStateService = require('../../common/services/modelStateService');
 // - segurar análise enquanto o closer está falando (ele não lê nada nessa hora).
 const SUGGESTION_COOLDOWN_MS = 8000;
 const ME_SPEAKING_HOLD_MS = 2500;
+// Só gerar sugestão com o lead em silêncio real há pelo menos este tempo
+// (evita sugestão caindo no meio da fala dele e sendo trocada em seguida).
+const THEM_QUIET_HOLD_MS = 1200;
 
 class SummaryService {
     constructor() {
@@ -22,6 +25,7 @@ class SummaryService {
         this.leadBriefing = '';
         this.lastSuggestionAt = 0;
         this.lastMeActivityAt = 0;
+        this.lastThemActivityAt = 0;
         this._deferTimer = null;
 
         // Callbacks
@@ -32,6 +36,11 @@ class SummaryService {
     /** Chamado pelo STT sempre que chega fala do closer (canal "Me"). */
     notifyMeActivity() {
         this.lastMeActivityAt = Date.now();
+    }
+
+    /** Chamado pelo STT sempre que chega fala do lead (canal "Them"). */
+    notifyThemActivity() {
+        this.lastThemActivityAt = Date.now();
     }
 
     setCallbacks({ onAnalysisComplete, onStatusUpdate }) {
@@ -288,11 +297,13 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
         const now = Date.now();
         const cooldownLeft = this.lastSuggestionAt + SUGGESTION_COOLDOWN_MS - now;
         const meHoldLeft = this.lastMeActivityAt + ME_SPEAKING_HOLD_MS - now;
-        const waitMs = Math.max(cooldownLeft, meHoldLeft, 0);
+        const themHoldLeft = this.lastThemActivityAt + THEM_QUIET_HOLD_MS - now;
+        const waitMs = Math.max(cooldownLeft, meHoldLeft, themHoldLeft, 0);
 
         if (waitMs > 0) {
             if (!this._deferTimer) {
-                const motivo = meHoldLeft > cooldownLeft ? 'closer falando' : 'cooldown';
+                const motivo = themHoldLeft >= Math.max(cooldownLeft, meHoldLeft) ? 'lead ainda falando'
+                    : meHoldLeft > cooldownLeft ? 'closer falando' : 'cooldown';
                 console.log(`[SummaryService] Sugestão adiada ${waitMs}ms (${motivo})`);
                 this._deferTimer = setTimeout(() => {
                     this._deferTimer = null;

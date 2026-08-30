@@ -28,6 +28,9 @@ class ListenService {
             },
             onMeActivity: () => {
                 this.summaryService.notifyMeActivity();
+            },
+            onThemActivity: () => {
+                this.summaryService.notifyThemActivity();
             }
         });
 
