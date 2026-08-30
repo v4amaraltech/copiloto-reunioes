@@ -90,3 +90,5 @@ afterPack: scripts/adhoc-sign.js
 dmg:
     icon: src/ui/assets/logo.icns
     title: 'Copiloto V4'
+    # Nome fixo para o link /releases/latest/download/ nunca quebrar
+    artifactName: 'CopilotoV4-latest.${ext}'
