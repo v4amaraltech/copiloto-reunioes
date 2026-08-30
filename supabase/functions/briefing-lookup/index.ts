@@ -113,10 +113,17 @@ Deno.serve(async (req: Request) => {
     console.error("[briefing-lookup] n8n webhook falhou:", calResp.status);
     return json(502, { error: "calendar_unavailable" });
   }
-  const event = await calResp.json();
+  // O n8n pode responder com corpo vazio quando não há reunião próxima —
+  // tratar como "sem reunião" em vez de quebrar no parse.
+  let event: Record<string, unknown> & { found?: boolean } = {};
+  try {
+    event = await calResp.json();
+  } catch (_) {
+    event = {};
+  }
 
   if (!event.found) {
-    return json(200, { found: false, reason: event.reason || "sem reunião com convidado externo" });
+    return json(200, { found: false, reason: (event.reason as string) || "sem reunião com convidado externo" });
   }
 
   // 2. Match dos convidados com leads
