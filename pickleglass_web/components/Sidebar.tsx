@@ -223,16 +223,11 @@ const SidebarComponent = ({ isCollapsed, onToggle, onSearchClick }: SidebarProps
                 ariaLabel: 'Help Center (new window)',
             },
             {
-                href: 'https://www.dropbox.com/scl/fi/esk4h8z45sryvbremy57v/Pickle_latest.dmg?rlkey=92y535bz6p6gov6vd17x6q53b&st=9kl0annj&dl=1',
+                // Link fixo: sempre entrega o DMG da release mais recente
+                href: 'https://github.com/v4amaraltech/copiloto-reunioes/releases/latest/download/CopilotoV4-latest.dmg',
                 icon: '/download.svg',
-                text: 'Download Pickle Camera',
-                ariaLabel: 'Download Pickle Camera (new window)',
-            },
-            {
-                href: 'hhttps://www.dropbox.com/scl/fi/znid09apxiwtwvxer6oc9/Glass_latest.dmg?rlkey=gwvvyb3bizkl25frhs4k1zwds&st=37q31b4w&dl=1',
-                icon: '/download.svg',
-                text: 'Download Pickle Glass',
-                ariaLabel: 'Download Pickle Glass (new window)',
+                text: 'Download Copiloto V4',
+                ariaLabel: 'Download Copiloto V4 (new window)',
             },
         ],
         []
