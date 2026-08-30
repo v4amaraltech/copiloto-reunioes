@@ -211,6 +211,12 @@ if (!gotTheLock) {
 // setup protocol after single instance lock
 setupProtocolHandling();
 
+// Sem este listener o Electron encerra o app quando a última janela fecha;
+// o header pode ser recriado em transições de estado, então manter vivo.
+app.on('window-all-closed', () => {
+    console.log('[Lifecycle] Todas as janelas fecharam — mantendo o app vivo (comportamento macOS).');
+});
+
 app.whenReady().then(async () => {
 
     // Setup native loopback audio capture for Windows

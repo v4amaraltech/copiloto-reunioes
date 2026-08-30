@@ -695,6 +695,12 @@ function createWindows() {
             }
         });
     }
+    header.on('closed', () => {
+        console.log('[WindowManager] Janela do header foi FECHADA.');
+    });
+    header.webContents.on('render-process-gone', (_e, details) => {
+        console.error('[WindowManager] Renderer do header morreu:', details.reason, details.exitCode);
+    });
     windowPool.set('header', header);
     layoutManager = new WindowLayoutManager(windowPool);
     movementManager = new SmoothMovementManager(windowPool);

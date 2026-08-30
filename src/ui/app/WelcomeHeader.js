@@ -110,7 +110,7 @@ export class WelcomeHeader extends LitElement {
         .action-button {
             -webkit-app-region: no-drag;
             padding: 8px 10px;
-            background: rgba(132.6, 132.6, 132.6, 0.8);
+            background: rgba(238, 27, 46, 0.85);
             box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.16);
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.5);
@@ -122,7 +122,7 @@ export class WelcomeHeader extends LitElement {
             transition: background-color 0.2s;
         }
         .action-button:hover {
-            background: rgba(150, 150, 150, 0.9);
+            background: rgba(238, 27, 46, 1);
         }
         .button-text {
             color: white;

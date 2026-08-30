@@ -317,24 +317,26 @@ export class SummaryView extends LitElement {
         }
 
         .lead-result:hover {
-            background: rgba(0, 122, 255, 0.25);
+            background: rgba(238, 27, 46, 0.25);
         }
 
         .suggestion-current {
             margin: 4px 12px 10px 12px;
-            padding: 10px 12px;
-            background: rgba(0, 122, 255, 0.14);
-            border: 1px solid rgba(0, 122, 255, 0.35);
-            border-radius: 8px;
+            padding: 12px 14px;
+            background: linear-gradient(135deg, rgba(238, 27, 46, 0.22) 0%, rgba(238, 27, 46, 0.10) 100%);
+            border: 1px solid rgba(238, 27, 46, 0.45);
+            border-left: 3px solid #ee1b2e;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(238, 27, 46, 0.12);
             color: #ffffff;
-            font-size: 14px;
-            line-height: 1.45;
+            font-size: 15px;
+            line-height: 1.5;
             font-weight: 500;
             cursor: pointer;
         }
 
         .suggestion-current:hover {
-            background: rgba(0, 122, 255, 0.22);
+            background: linear-gradient(135deg, rgba(238, 27, 46, 0.30) 0%, rgba(238, 27, 46, 0.16) 100%);
         }
 
         .suggestion-current.streaming {
