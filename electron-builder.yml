@@ -73,16 +73,18 @@ mac:
     hardenedRuntime: true
     entitlements: entitlements.plist
     entitlementsInherit: entitlements.plist
-    # Assinatura ad-hoc com identificador correto (com.v4amaral.copiloto).
-    # Sem isso o app sai com assinatura genérica "Electron" e o macOS 26 ignora
-    # a permissão de Gravação de Tela concedida (ciclo infinito de permissões).
+    # Assinatura: o electron-builder não faz ad-hoc via `identity`, então o hook
+    # afterPack (scripts/adhoc-sign.js) assina com o identificador correto.
     # Trocar pelo Developer ID quando a conta Apple estiver ativa.
-    identity: '-'
+    identity: null
     target:
       - target: dmg
         arch: universal
       - target: zip
         arch: universal
+
+# Hook pós-empacotamento: assinatura ad-hoc com identificador com.v4amaral.copiloto
+afterPack: scripts/adhoc-sign.js
 
 # DMG com a identidade V4: ícone do volume e título
 dmg:
