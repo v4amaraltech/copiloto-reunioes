@@ -698,41 +698,12 @@ export class SummaryView extends LitElement {
 
         return html`
             <div class="insights-container">
-                <div class="briefing-section">
-                    <div class="briefing-toggle" @click=${() => (this.briefingOpen = !this.briefingOpen)}>
-                        <span>Briefing do lead</span>
-                        <span class="briefing-status">${this.briefingSaved ? '● carregado' : this.briefingOpen ? '▲' : '▼ colar'}</span>
-                    </div>
-                    ${this.briefingOpen
-                        ? html`
-                              <div class="lead-search-row">
-                                  <input
-                                      class="lead-search-input"
-                                      type="text"
-                                      placeholder="Buscar lead por nome, empresa ou e-mail…"
-                                      @keydown=${e => { if (e.key === 'Enter') this.searchLead(); }}
-                                  />
-                                  <button class="briefing-save" ?disabled=${this.leadSearching} @click=${() => this.searchLead()}>
-                                      ${this.leadSearching ? '…' : 'Buscar'}
-                                  </button>
-                              </div>
-                              ${this.leadSearchError
-                                  ? html`<div class="lead-search-error">${this.leadSearchError}</div>`
-                                  : ''}
-                              ${this.leadResults.map(
-                                  r => html`
-                                      <div class="lead-result" @click=${() => this.selectLead(r)}>${r.label}</div>
-                                  `
-                              )}
-                              <textarea
-                                  class="briefing-textarea"
-                                  placeholder="…ou cole aqui o card de briefing do lead manualmente."
-                                  .value=${this.briefingText}
-                              ></textarea>
-                              <button class="briefing-save" @click=${() => this.saveBriefing()}>Salvar briefing</button>
-                          `
-                        : ''}
-                </div>
+                <!-- Briefing sem UI (decisão de UX): o card BANT continua chegando via
+                     briefing automático/Calendar e alimentando o system prompt do
+                     copiloto — apenas não é mais exibido nem editado aqui. -->
+                ${this.briefingSaved
+                    ? html`<div class="briefing-section"><div class="briefing-toggle"><span>Briefing do lead</span><span class="briefing-status">● carregado no copiloto</span></div></div>`
+                    : ''}
                 ${this.isStreaming
                     ? html`
                           <insights-title>Sugestão</insights-title>
