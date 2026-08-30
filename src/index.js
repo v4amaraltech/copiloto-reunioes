@@ -29,12 +29,13 @@ try {
     console.warn('[Rebrand] Migração da pasta de dados falhou:', err.message);
 }
 
-// Dev: espelha os logs do main process em /tmp/copiloto-dev.log para diagnóstico,
+// Espelha os logs do main process em arquivo para diagnóstico (dev e app instalado),
 // independentemente de qual terminal iniciou o app.
-if (!app.isPackaged) {
+{
     try {
         const fs = require('fs');
-        const logStream = fs.createWriteStream('/tmp/copiloto-dev.log', { flags: 'a' });
+        const logPath = app.isPackaged ? '/tmp/copiloto-app.log' : '/tmp/copiloto-dev.log';
+        const logStream = fs.createWriteStream(logPath, { flags: 'a' });
         logStream.write(`\n===== boot ${new Date().toISOString()} =====\n`);
         const tee = orig => (...args) => {
             try { logStream.write(args.map(a => (typeof a === 'string' ? a : JSON.stringify(a))).join(' ') + '\n'); } catch (_) {}

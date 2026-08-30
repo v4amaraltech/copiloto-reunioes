@@ -41,6 +41,18 @@ module.exports = {
     ipcMain.handle('request-microphone-permission', async () => await permissionService.requestMicrophonePermission());
     ipcMain.handle('open-system-preferences', async (event, section) => await permissionService.openSystemPreferences(section));
     ipcMain.handle('mark-keychain-completed', async () => await permissionService.markKeychainCompleted());
+    // Handler ausente no upstream: o renderer consulta se o setup de permissões já foi
+    // concluído antes; responder com o estado real evita o erro "No handler registered".
+    // Reinicia o app — necessário após liberar Gravação de Tela (o macOS só
+    // reporta a permissão nova na próxima abertura do processo).
+    ipcMain.handle('relaunch-app', () => {
+        app.relaunch();
+        app.exit(0);
+    });
+    ipcMain.handle('check-permissions-completed', async () => {
+        const p = await permissionService.checkSystemPermissions();
+        return !p.needsSetup;
+    });
     ipcMain.handle('check-keychain-completed', async () => await permissionService.checkKeychainCompleted());
     ipcMain.handle('initialize-encryption-key', async () => {
         const userId = authService.getCurrentUserId();

@@ -259,7 +259,17 @@ export class PermissionHeader extends LitElement {
         :host-context(body.has-glass) .close-button:hover {
             background: transparent !important;
         }
+
+        .v4-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            display: block;
+            margin: 0 auto 6px auto;
+        }
     `;
+
+    static _v4LogoCss = true;
 
     static properties = {
         microphoneGranted: { type: String },
@@ -268,6 +278,8 @@ export class PermissionHeader extends LitElement {
         isChecking: { type: String },
         continueCallback: { type: Function },
         userMode: { type: String }, // 'local' or 'firebase'
+        screenRequested: { type: Boolean }, // usuário já abriu os Ajustes para liberar a tela
+        micAutoRequested: { type: Boolean },
     };
 
     constructor() {
@@ -278,13 +290,16 @@ export class PermissionHeader extends LitElement {
         this.isChecking = false;
         this.continueCallback = null;
         this.userMode = 'local'; // Default to local
+        this.screenRequested = false;
+        this.micAutoRequested = false;
     }
 
     updated(changedProperties) {
         super.updated(changedProperties);
-        if (changedProperties.has('userMode')) {
-            const newHeight = this.userMode === 'firebase' ? 280 : 220;
-            console.log(`[PermissionHeader] User mode changed to ${this.userMode}, requesting resize to ${newHeight}px`);
+        if (changedProperties.has('userMode') || changedProperties.has('screenRequested')) {
+            const base = this.userMode === 'firebase' ? 316 : 256;
+            const newHeight = base + (this.screenRequested && this.screenGranted !== 'granted' ? 46 : 0);
+            console.log(`[PermissionHeader] Ajustando altura da janela para ${newHeight}px`);
             this.dispatchEvent(new CustomEvent('request-resize', {
                 detail: { height: newHeight },
                 bubbles: true,
@@ -307,7 +322,14 @@ export class PermissionHeader extends LitElement {
         }
 
         await this.checkPermissions();
-        
+
+        // Pedir o microfone automaticamente na primeira abertura: o macOS mostra
+        // o diálogo nativo na hora, sem o closer precisar achar o botão.
+        if (!this.micAutoRequested && this.microphoneGranted !== 'granted') {
+            this.micAutoRequested = true;
+            setTimeout(() => this.handleMicrophoneClick(), 600);
+        }
+
         // Set up periodic permission check
         this.permissionCheckInterval = setInterval(async () => {
             if (window.api) {
@@ -417,8 +439,12 @@ export class PermissionHeader extends LitElement {
                 return;
             }
             if (permissions.screen === 'not-determined' || permissions.screen === 'denied' || permissions.screen === 'unknown' || permissions.screen === 'restricted') {
-            console.log('[PermissionHeader] Opening screen recording preferences...');
-            await window.api.permissionHeader.openSystemPreferences('screen-recording');
+                console.log('[PermissionHeader] Opening screen recording preferences...');
+                await window.api.permissionHeader.openSystemPreferences('screen-recording');
+                // O macOS só passa a reportar a permissão de tela depois que o app
+                // reinicia — mostrar o botão de reiniciar para destravar a jornada.
+                this.screenRequested = true;
+                this.requestUpdate();
             }
             
             // Check permissions again after a delay
@@ -476,24 +502,33 @@ export class PermissionHeader extends LitElement {
         }
     }
 
+    handleRelaunch() {
+        console.log('[PermissionHeader] Reiniciando o app para aplicar a permissão de tela...');
+        if (window.api?.permissionHeader?.relaunchApp) {
+            window.api.permissionHeader.relaunchApp();
+        }
+    }
+
     render() {
         const isKeychainRequired = this.userMode === 'firebase';
-        const containerHeight = isKeychainRequired ? 280 : 220;
+        const needRestart = this.screenRequested && this.screenGranted !== 'granted';
+        const containerHeight = (isKeychainRequired ? 316 : 256) + (needRestart ? 46 : 0);
         const keychainOk = !isKeychainRequired || this.keychainGranted === 'granted';
         const allGranted = this.microphoneGranted === 'granted' && this.screenGranted === 'granted' && keychainOk;
 
         return html`
             <div class="container" style="height: ${containerHeight}px">
-                <button class="close-button" @click=${this.handleClose} title="Close application">
+                <button class="close-button" @click=${this.handleClose} title="Fechar o aplicativo">
                     <svg width="8" height="8" viewBox="0 0 10 10" fill="currentColor">
                         <path d="M1 1L9 9M9 1L1 9" stroke="currentColor" stroke-width="1.2" />
                     </svg>
                 </button>
-                <h1 class="title">Permission Setup Required</h1>
+                <img class="v4-logo" src="data:image/png;base64,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" alt="V4" />
+                <h1 class="title">Copiloto V4 — liberar acessos</h1>
 
                 <div class="form-content ${allGranted ? 'all-granted' : ''}">
                     ${!allGranted ? html`
-                        <div class="subtitle">Grant access to microphone, screen recording${isKeychainRequired ? ' and keychain' : ''} to continue</div>
+                        <div class="subtitle">Libere o microfone e a gravação de tela${isKeychainRequired ? ' e o keychain' : ''} para continuar</div>
                         
                         <div class="permission-status">
                             <div class="permission-item ${this.microphoneGranted === 'granted' ? 'granted' : ''}">
@@ -501,12 +536,12 @@ export class PermissionHeader extends LitElement {
                                     <svg class="check-icon" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                     </svg>
-                                    <span>Microphone ✓</span>
+                                    <span>Microfone ✓</span>
                                 ` : html`
                                     <svg class="permission-icon" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd" />
                                     </svg>
-                                    <span>Microphone</span>
+                                    <span>Microfone</span>
                                 `}
                             </div>
                             
@@ -515,12 +550,12 @@ export class PermissionHeader extends LitElement {
                                     <svg class="check-icon" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                                     </svg>
-                                    <span>Screen ✓</span>
+                                    <span>Tela ✓</span>
                                 ` : html`
                                     <svg class="permission-icon" viewBox="0 0 20 20" fill="currentColor">
                                         <path fill-rule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2h-2.22l.123.489.804.804A1 1 0 0113 18H7a1 1 0 01-.707-1.707l.804-.804L7.22 15H5a2 2 0 01-2-2V5zm5.771 7H5V5h10v7H8.771z" clip-rule="evenodd" />
                                     </svg>
-                                    <span>Screen Recording</span>
+                                    <span>Gravação de tela</span>
                                 `}
                             </div>
 
@@ -546,16 +581,22 @@ export class PermissionHeader extends LitElement {
                             @click=${this.handleMicrophoneClick}
                             ?disabled=${this.microphoneGranted === 'granted'}
                         >
-                            ${this.microphoneGranted === 'granted' ? 'Microphone Access Granted' : 'Grant Microphone Access'}
+                            ${this.microphoneGranted === 'granted' ? 'Microfone liberado' : '1. Liberar microfone'}
                         </button>
 
-                        <button 
-                            class="action-button" 
+                        <button
+                            class="action-button"
                             @click=${this.handleScreenClick}
                             ?disabled=${this.screenGranted === 'granted'}
                         >
-                            ${this.screenGranted === 'granted' ? 'Screen Recording Granted' : 'Grant Screen Recording Access'}
+                            ${this.screenGranted === 'granted' ? 'Gravação de tela liberada' : '2. Liberar gravação de tela'}
                         </button>
+
+                        ${needRestart ? html`
+                            <button class="continue-button" @click=${this.handleRelaunch}>
+                                3. Ativei nos Ajustes — reiniciar o Copiloto
+                            </button>
+                        ` : ''}
 
                         ${isKeychainRequired ? html`
                             <button 
@@ -574,7 +615,7 @@ export class PermissionHeader extends LitElement {
                             class="continue-button" 
                             @click=${this.handleContinue}
                         >
-                            Continue to Pickle Glass
+                            Começar a usar o Copiloto V4
                         </button>
                     `}
                 </div>

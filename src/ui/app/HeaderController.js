@@ -201,7 +201,7 @@ class HeaderTransitionManager {
             }
         }
 
-        let initialHeight = 220;
+        let initialHeight = 256;
         if (window.api) {
             try {
                 const userState = await window.api.common.getCurrentUser();
@@ -240,7 +240,7 @@ class HeaderTransitionManager {
 
     async _resizeForPermissionHeader(height) {
         if (!window.api) return;
-        const finalHeight = height || 220;
+        const finalHeight = height || 256;
         return window.api.headerController.resizeHeaderWindow({ width: 285, height: finalHeight })
             .catch(() => {});
     }
