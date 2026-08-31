@@ -115,3 +115,6 @@ dist/
 build/ 
 # Maestri canvas (diretório de trabalho local)
 .maestri/
+
+# Claude Code (config local de ferramenta)
+.claude/
