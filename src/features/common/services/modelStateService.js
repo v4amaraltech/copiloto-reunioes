@@ -212,18 +212,9 @@ class ModelStateService extends EventEmitter {
     }
 
     /**
-     * 사용자가 Firebase에 로그인했는지 확인합니다.
-     */
-    isLoggedInWithFirebase() {
-        return this.authService.getCurrentUser().isLoggedIn;
-    }
-
-    /**
      * 유효한 API 키가 하나라도 설정되어 있는지 확인합니다.
      */
     async hasValidApiKey() {
-        if (this.isLoggedInWithFirebase()) return true;
-        
         const allSettings = await providerSettingsRepository.getAll();
         return allSettings.some(s => s.api_key && s.api_key.trim().length > 0);
     }
@@ -370,7 +361,6 @@ class ModelStateService extends EventEmitter {
     }
 
     async areProvidersConfigured() {
-        if (this.isLoggedInWithFirebase()) return true;
         const allSettings = await providerSettingsRepository.getAll();
         const apiKeyMap = {};
         allSettings.forEach(s => apiKeyMap[s.provider] = s.api_key);

@@ -1,5 +1,5 @@
-// Modo local apenas: o login em nuvem (Firebase/Pickle) foi removido neste fork.
-// A autenticação dos closers será feita via Supabase Auth (ver docs/plano-copiloto-reunioes.md).
+// Modo local apenas: o app roda sempre como default_user.
+// A autenticação dos closers é feita via Supabase Auth (v4AuthService).
 const { BrowserWindow } = require('electron');
 const encryptionService = require('./encryptionService');
 const sessionRepository = require('../repositories/session');
@@ -7,8 +7,6 @@ const sessionRepository = require('../repositories/session');
 class AuthService {
     constructor() {
         this.currentUserId = 'default_user';
-        this.currentUserMode = 'local'; // 'local' or 'firebase'
-        this.currentUser = null;
         this.isInitialized = false;
 
         // This ensures the key is ready before any login/logout state change.
@@ -21,9 +19,7 @@ class AuthService {
         if (this.isInitialized) return this.initializationPromise;
 
         this.initializationPromise = (async () => {
-            this.currentUser = null;
             this.currentUserId = 'default_user';
-            this.currentUserMode = 'local';
 
             // Clean up any zombie sessions from a previous run.
             await sessionRepository.endAllActiveSessions();
@@ -37,24 +33,6 @@ class AuthService {
         return this.initializationPromise;
     }
 
-    async startFirebaseAuthFlow() {
-        console.warn('[AuthService] Cloud login is disabled in this fork (local-only mode).');
-        return { success: false, error: 'Cloud login is disabled in this fork.' };
-    }
-
-    async signInWithCustomToken() {
-        throw new Error('Cloud login is disabled in this fork (local-only mode).');
-    }
-
-    async signOut() {
-        try {
-            await sessionRepository.endAllActiveSessions();
-            this.broadcastUserState();
-        } catch (error) {
-            console.error('[AuthService] Error signing out:', error);
-        }
-    }
-    
     broadcastUserState() {
         const userState = this.getCurrentUser();
         console.log('[AuthService] Broadcasting user state change:', userState);
@@ -70,29 +48,12 @@ class AuthService {
     }
 
     getCurrentUser() {
-        const isLoggedIn = !!(this.currentUserMode === 'firebase' && this.currentUser);
-
-        if (isLoggedIn) {
-            return {
-                uid: this.currentUser.uid,
-                email: this.currentUser.email,
-                displayName: this.currentUser.displayName,
-                mode: 'firebase',
-                isLoggedIn: true,
-                //////// before_modelStateService ////////
-                // hasApiKey: this.hasApiKey // Always true for firebase users, but good practice
-                //////// before_modelStateService ////////
-            };
-        }
         return {
             uid: this.currentUserId, // returns 'default_user'
             email: 'local@v4amaral.internal',
             displayName: 'Default User',
             mode: 'local',
             isLoggedIn: false,
-            //////// before_modelStateService ////////
-            // hasApiKey: this.hasApiKey
-            //////// before_modelStateService ////////
         };
     }
 }

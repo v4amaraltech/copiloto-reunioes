@@ -543,7 +543,8 @@ async function handleCustomUrl(url) {
         switch (action) {
             case 'login':
             case 'auth-success':
-                await handleFirebaseAuthCallback(params);
+                // Login em nuvem removido: deep links de auth são ignorados.
+                console.warn('[Custom URL] Auth deep link ignored (local-only mode).');
                 break;
             case 'personalize':
                 handlePersonalizeFromUrl(params);
@@ -563,16 +564,6 @@ async function handleCustomUrl(url) {
 
     } catch (error) {
         console.error('[Custom URL] Error parsing URL:', error);
-    }
-}
-
-async function handleFirebaseAuthCallback(_params) {
-    // Login em nuvem desabilitado neste fork (modo local).
-    console.warn('[Auth] Cloud auth callback ignored: cloud login is disabled in this fork.');
-    const { windowPool } = require('./window/windowManager.js');
-    const header = windowPool.get('header');
-    if (header) {
-        header.webContents.send('auth-failed', { message: 'Cloud login is disabled in this fork.' });
     }
 }
 
