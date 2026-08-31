@@ -1420,7 +1420,6 @@ export class SettingsView extends LitElement {
         const apiKeyManagementHTML = html`
             <div class="api-key-section">
                 ${Object.entries(this.providerConfig)
-                    .filter(([id, config]) => !id.includes('-glass'))
                     .map(([id, config]) => {
                         if (id === 'ollama') {
                             // Special UI for Ollama
