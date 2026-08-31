@@ -1,16 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Check, ExternalLink, Cloud, HardDrive } from 'lucide-react'
+import { Check, ExternalLink, HardDrive } from 'lucide-react'
 import { useAuth } from '@/utils/auth'
-import { 
+import {
   UserProfile,
   getUserProfile,
   updateUserProfile,
   checkApiKeyStatus,
   saveApiKey,
-  deleteAccount,
-  logout
+  deleteAccount
 } from '@/utils/api'
 import { useRouter } from 'next/navigation'
 
@@ -24,7 +23,7 @@ type Tab = 'profile' | 'privacy' | 'billing'
 type BillingCycle = 'monthly' | 'annually'
 
 export default function SettingsPage() {
-  const { user: userInfo, isLoading, mode } = useAuth()
+  const { user: userInfo, isLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('profile')
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly')
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -84,11 +83,8 @@ export default function SettingsPage() {
   }
 
   if (!userInfo) {
-    router.push('/login')
     return null
   }
-
-  const isFirebaseMode = mode === 'firebase'
 
   const tabs = [
     { id: 'profile' as Tab, name: 'Personal Profile', href: '/settings' },
@@ -126,46 +122,27 @@ export default function SettingsPage() {
   }
 
   const handleDeleteAccount = async () => {
-    const confirmMessage = isFirebaseMode
-      ? "Are you sure you want to delete your account? This action cannot be undone and all data stored in Firebase will be deleted."
-      : "Are you sure you want to delete your account? This action cannot be undone and all data will be deleted."
-    
+    const confirmMessage = "Are you sure you want to delete your account? This action cannot be undone and all data will be deleted."
+
     if (window.confirm(confirmMessage)) {
       try {
         await deleteAccount()
-        router.push('/login');
+        router.push('/');
       } catch (error) {
         console.error("Failed to delete account:", error)
       }
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await logout()
-    } catch (error) {
-      console.error("Logout failed:", error)
-    }
-  }
-
   const renderBillingContent = () => (
     <div className="space-y-8">
-      <div className={`p-4 rounded-lg border ${isFirebaseMode ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
+      <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
         <div className="flex items-center gap-2 mb-2">
-          {isFirebaseMode ? (
-            <Cloud className="h-5 w-5 text-blue-600" />
-          ) : (
-            <HardDrive className="h-5 w-5 text-gray-600" />
-          )}
-          <h3 className={`font-semibold ${isFirebaseMode ? 'text-blue-900' : 'text-gray-900'}`}>
-            {isFirebaseMode ? 'Firebase Hosting Mode' : 'Local Execution Mode'}
-          </h3>
+          <HardDrive className="h-5 w-5 text-gray-600" />
+          <h3 className="font-semibold text-gray-900">Local Execution Mode</h3>
         </div>
-        <p className={`text-sm ${isFirebaseMode ? 'text-blue-700' : 'text-gray-700'}`}>
-          {isFirebaseMode 
-            ? 'All data is safely stored and synchronized in Firebase Cloud.'
-            : 'Data is stored in local database and you can use personal API keys.'
-          }
+        <p className="text-sm text-gray-700">
+          Data is stored in local database and you can use personal API keys.
         </p>
       </div>
 
@@ -330,10 +307,7 @@ export default function SettingsPage() {
           <div>
             <h4 className="font-semibold text-green-900">All features are currently free!</h4>
             <p className="text-green-700 text-sm">
-              {isFirebaseMode 
-                ? 'Enjoy all Pickle Glass features for free in Firebase hosting mode. Pro and Enterprise plans will be released soon with additional premium features.'
-                : 'Enjoy all Pickle Glass features for free in local mode. You can use personal API keys or continue using the free system.'
-              }
+              Enjoy all Pickle Glass features for free in local mode. You can use personal API keys or continue using the free system.
             </p>
           </div>
         </div>
@@ -348,34 +322,13 @@ export default function SettingsPage() {
       case 'profile':
         return (
           <div className="space-y-6">
-            <div className={`p-4 rounded-lg border ${isFirebaseMode ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {isFirebaseMode ? (
-                    <Cloud className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <HardDrive className="h-5 w-5 text-gray-600" />
-                  )}
-                  <div>
-                    <h3 className={`font-semibold ${isFirebaseMode ? 'text-blue-900' : 'text-gray-900'}`}>
-                      {isFirebaseMode ? 'Firebase Hosting Mode' : 'Local Execution Mode'}
-                    </h3>
-                    <p className={`text-sm ${isFirebaseMode ? 'text-blue-700' : 'text-gray-700'}`}>
-                      {isFirebaseMode 
-                        ? `Logged in with Google account (${userInfo.email})`
-                        : 'Running as local user'
-                      }
-                    </p>
-                  </div>
+            <div className="p-4 rounded-lg border bg-gray-50 border-gray-200">
+              <div className="flex items-center gap-2">
+                <HardDrive className="h-5 w-5 text-gray-600" />
+                <div>
+                  <h3 className="font-semibold text-gray-900">Local Execution Mode</h3>
+                  <p className="text-sm text-gray-700">Running as local user</p>
                 </div>
-                {isFirebaseMode && (
-                  <button
-                    onClick={handleLogout}
-                    className="px-3 py-1 text-sm text-blue-600 hover:text-blue-700 underline"
-                  >
-                    Logout
-                  </button>
-                )}
               </div>
             </div>
 
@@ -404,8 +357,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {!isFirebaseMode && (
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">API Key</h3>
                 <p className="text-sm text-gray-600 mb-4">
                   If you want to use your own LLM API key, you can add it here. It will be used for all requests made by the local application.
@@ -441,17 +393,13 @@ export default function SettingsPage() {
                       {isSaving ? 'Saving...' : 'Save'}
                     </button>
                 </div>
-              </div>
-            )}
+            </div>
 
-            {(isFirebaseMode || (!isFirebaseMode && !hasApiKey)) && (
+            {!hasApiKey && (
                <div className="bg-white border border-red-300 rounded-lg p-6">
                  <h3 className="text-lg font-semibold text-gray-900 mb-1">Delete Account</h3>
                  <p className="text-sm text-gray-600 mb-4">
-                   {isFirebaseMode 
-                     ? 'Permanently remove your Firebase account and all content. This action cannot be undone, so please proceed carefully.'
-                     : 'Permanently remove your personal account and all content from the Pickle Glass platform. This action cannot be undone, so please proceed carefully.'
-                   }
+                   Permanently remove your personal account and all content from the Pickle Glass platform. This action cannot be undone, so please proceed carefully.
                  </p>
                  <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
                     <button
