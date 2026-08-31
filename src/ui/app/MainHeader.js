@@ -5,6 +5,7 @@ export class MainHeader extends LitElement {
         isTogglingSession: { type: Boolean, state: true },
         shortcuts: { type: Object, state: true },
         listenSessionStatus: { type: String, state: true },
+        presets: { type: Array, state: true },
     };
 
     static styles = css`
@@ -271,6 +272,42 @@ export class MainHeader extends LitElement {
             justify-content: center;
         }
 
+        .agent-select {
+            -webkit-app-region: no-drag;
+            height: 26px;
+            max-width: 148px;
+            min-width: 96px;
+            margin-left: 4px;
+            padding: 0 22px 0 10px;
+            background-color: rgba(255, 255, 255, 0.14);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            font-family: 'Helvetica Neue', sans-serif;
+            border: none;
+            border-radius: 9000px;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='12' viewBox='0 0 24 24' width='12' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 7px center;
+            transition: background-color 0.15s ease;
+        }
+
+        .agent-select:hover {
+            background-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .agent-select option {
+            background: #222;
+            color: white;
+        }
+
         .settings-button {
             -webkit-app-region: no-drag;
             padding: 5px;
@@ -304,6 +341,7 @@ export class MainHeader extends LitElement {
         :host-context(body.has-glass) .header,
         :host-context(body.has-glass) .listen-button,
         :host-context(body.has-glass) .header-actions,
+        :host-context(body.has-glass) .agent-select,
         :host-context(body.has-glass) .settings-button {
             background: transparent !important;
             filter: none !important;
@@ -339,6 +377,7 @@ export class MainHeader extends LitElement {
         :host-context(body.has-glass) .header,
         :host-context(body.has-glass) .listen-button,
         :host-context(body.has-glass) .header-actions,
+        :host-context(body.has-glass) .agent-select,
         :host-context(body.has-glass) .settings-button,
         :host-context(body.has-glass) .icon-box {
             border-radius: 0 !important;
@@ -354,6 +393,7 @@ export class MainHeader extends LitElement {
     constructor() {
         super();
         this.shortcuts = {};
+        this.presets = [];
         this.isVisible = true;
         this.isAnimating = false;
         this.hasSlidIn = false;
@@ -514,6 +554,39 @@ export class MainHeader extends LitElement {
                 this.shortcuts = keybinds;
             };
             window.api.mainHeader.onShortcutsUpdated(this._shortcutListener);
+
+            this._presetsUpdatedListener = () => this._loadPresets();
+            window.api.mainHeader.onPresetsUpdated(this._presetsUpdatedListener);
+            this._loadPresets();
+        }
+    }
+
+    async _loadPresets() {
+        try {
+            const presets = await window.api.mainHeader.getPresets();
+            this.presets = presets || [];
+        } catch (error) {
+            console.error('[MainHeader] Failed to load agents:', error);
+        }
+    }
+
+    updated(changedProperties) {
+        super.updated?.(changedProperties);
+        // <select> não re-seleciona via atributo depois do primeiro render; sincroniza o valor.
+        const sel = this.renderRoot?.querySelector('.agent-select');
+        if (sel) {
+            const active = this.presets.find(p => p.is_active === 1);
+            sel.value = active ? active.id : '';
+        }
+    }
+
+    async _handleAgentChange(e) {
+        const id = e.target.value || null;
+        try {
+            await window.api.mainHeader.setActivePreset(id);
+            this.presets = this.presets.map(p => ({ ...p, is_active: p.id === id ? 1 : 0 }));
+        } catch (error) {
+            console.error('[MainHeader] Failed to set active agent:', error);
         }
     }
 
@@ -533,23 +606,17 @@ export class MainHeader extends LitElement {
             if (this._shortcutListener) {
                 window.api.mainHeader.removeOnShortcutsUpdated(this._shortcutListener);
             }
+            if (this._presetsUpdatedListener) {
+                window.api.mainHeader.removeOnPresetsUpdated(this._presetsUpdatedListener);
+            }
         }
     }
 
-    showSettingsWindow(element) {
+    toggleSettingsWindow() {
         if (this.wasJustDragged) return;
         if (window.api) {
-            console.log(`[MainHeader] showSettingsWindow called at ${Date.now()}`);
-            window.api.mainHeader.showSettingsWindow();
-
-        }
-    }
-
-    hideSettingsWindow() {
-        if (this.wasJustDragged) return;
-        if (window.api) {
-            console.log(`[MainHeader] hideSettingsWindow called at ${Date.now()}`);
-            window.api.mainHeader.hideSettingsWindow();
+            console.log(`[MainHeader] toggleSettingsWindow called at ${Date.now()}`);
+            window.api.mainHeader.toggleSettingsWindow();
         }
     }
 
@@ -683,14 +750,27 @@ export class MainHeader extends LitElement {
                     </div>
                 </div>
 
-                <button 
+                <select
+                    class="agent-select"
+                    title="Agente ativo"
+                    @mousedown=${(e) => e.stopPropagation()}
+                    @change=${(e) => this._handleAgentChange(e)}
+                >
+                    <option value="" ?selected=${!this.presets.some(p => p.is_active === 1)}>Agente: padrão</option>
+                    ${this.presets.map(p => html`
+                        <option value=${p.id} ?selected=${p.is_active === 1}>${p.title}</option>
+                    `)}
+                </select>
+
+                <button
                     class="settings-button"
-                    @mouseenter=${(e) => this.showSettingsWindow(e.currentTarget)}
-                    @mouseleave=${() => this.hideSettingsWindow()}
+                    title="Configurações"
+                    @click=${() => this.toggleSettingsWindow()}
                 >
                     <div class="settings-icon">
-                        <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M8.0013 3.16406C7.82449 3.16406 7.65492 3.2343 7.5299 3.35932C7.40487 3.48435 7.33464 3.65392 7.33464 3.83073C7.33464 4.00754 7.40487 4.17711 7.5299 4.30213C7.65492 4.42716 7.82449 4.4974 8.0013 4.4974C8.17811 4.4974 8.34768 4.42716 8.47271 4.30213C8.59773 4.17711 8.66797 4.00754 8.66797 3.83073C8.66797 3.65392 8.59773 3.48435 8.47271 3.35932C8.34768 3.2343 8.17811 3.16406 8.0013 3.16406ZM8.0013 7.83073C7.82449 7.83073 7.65492 7.90097 7.5299 8.02599C7.40487 8.15102 7.33464 8.32058 7.33464 8.4974C7.33464 8.67421 7.40487 8.84378 7.5299 8.9688C7.65492 9.09382 7.82449 9.16406 8.0013 9.16406C8.17811 9.16406 8.34768 9.09382 8.47271 8.9688C8.59773 8.84378 8.66797 8.67421 8.66797 8.4974C8.66797 8.32058 8.59773 8.15102 8.47271 8.02599C8.34768 7.90097 8.17811 7.83073 8.0013 7.83073ZM8.0013 12.4974C7.82449 12.4974 7.65492 12.5676 7.5299 12.6927C7.40487 12.8177 7.33464 12.9873 7.33464 13.1641C7.33464 13.3409 7.40487 13.5104 7.5299 13.6355C7.65492 13.7605 7.82449 13.8307 8.0013 13.8307C8.17811 13.8307 8.34768 13.7605 8.47271 13.6355C8.59773 13.5104 8.66797 13.3409 8.66797 13.1641C8.66797 12.9873 8.59773 12.8177 8.47271 12.6927C8.34768 12.5676 8.17811 12.4974 8.0013 12.4974Z" fill="white" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+                            <circle cx="12" cy="12" r="3"/>
                         </svg>
                     </div>
                 </button>

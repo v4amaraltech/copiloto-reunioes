@@ -1,4 +1,4 @@
-import { html, css, LitElement } from '../assets/lit-core-2.7.4.min.js';
+import { html, css, svg, LitElement } from '../assets/lit-core-2.7.4.min.js';
 // import { getOllamaProgressTracker } from '../../features/common/services/localProgressTracker.js'; // 제거됨
 
 export class SettingsView extends LitElement {
@@ -11,41 +11,167 @@ export class SettingsView extends LitElement {
 
         :host {
             display: block;
-            width: 240px;
+            width: 760px;
             height: 100%;
             color: white;
         }
 
         .settings-container {
             display: flex;
-            flex-direction: column;
-            height: 100%;
+            flex-direction: row;
+            height: 100vh;
             width: 100%;
-            background: rgba(20, 20, 20, 0.8);
-            border-radius: 12px;
-            outline: 0.5px rgba(255, 255, 255, 0.2) solid;
+            background: rgba(10, 10, 10, 0.97);
+            border-radius: 14px;
+            outline: 0.5px rgba(255, 255, 255, 0.16) solid;
             outline-offset: -1px;
             box-sizing: border-box;
             position: relative;
-            overflow-y: auto;
-            padding: 12px 12px;
+            overflow: hidden;
+            padding: 0;
             z-index: 1000;
         }
 
+        /* ── Menu lateral (estilo Perssua) ── */
+        .sidebar {
+            width: 208px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            padding: 20px 12px 14px 12px;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: -0.2px;
+            color: white;
+            padding: 0 10px 14px 10px;
+            margin-bottom: 6px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            border-radius: 11px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.72);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: background 0.12s ease, border-color 0.12s ease;
+        }
+
+        .nav-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-icon svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: white;
+        }
+
+        .nav-item.active {
+            background: rgba(238, 27, 46, 0.13);
+            border-color: rgba(238, 27, 46, 0.8);
+            color: white;
+            font-weight: 600;
+        }
+
+        .nav-item.active .nav-icon {
+            background: rgba(238, 27, 46, 0.22);
+            border-color: rgba(238, 27, 46, 0.5);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding-top: 12px;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 26px 20px 26px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .content-title {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: -0.4px;
+            color: white;
+            margin: 0 0 2px 0;
+            padding-right: 30px;
+        }
+
+        .content-hint {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.55);
+            line-height: 1.45;
+            margin: 0 0 12px 0;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            width: 22px;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .close-button:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .content-area::-webkit-scrollbar,
         .settings-container::-webkit-scrollbar {
             width: 6px;
         }
 
+        .content-area::-webkit-scrollbar-track,
         .settings-container::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.05);
             border-radius: 3px;
         }
 
+        .content-area::-webkit-scrollbar-thumb,
         .settings-container::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.2);
             border-radius: 3px;
         }
 
+        .content-area::-webkit-scrollbar-thumb:hover,
         .settings-container::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.3);
         }
@@ -171,13 +297,13 @@ export class SettingsView extends LitElement {
         }
 
         .settings-button {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
             color: white;
-            padding: 5px 10px;
-            font-size: 11px;
-            font-weight: 400;
+            padding: 9px 14px;
+            font-size: 12px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.15s ease;
             display: flex;
@@ -187,8 +313,22 @@ export class SettingsView extends LitElement {
         }
 
         .settings-button:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .settings-button.primary {
+            background: white;
+            border-color: white;
+            color: #111;
+            font-weight: 600;
+            font-size: 13px;
+            border-radius: 999px;
+            padding: 11px 18px;
+        }
+
+        .settings-button.primary:hover {
+            background: rgba(255, 255, 255, 0.88);
         }
 
         .settings-button:active {
@@ -281,33 +421,50 @@ export class SettingsView extends LitElement {
         .preset-list {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            max-height: 120px;
-            overflow-y: auto;
+            gap: 3px;
         }
 
         .preset-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 4px 6px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 3px;
+            gap: 12px;
+            padding: 13px 14px;
+            background: rgba(255, 255, 255, 0.035);
+            border-radius: 12px;
             cursor: pointer;
             transition: all 0.15s ease;
-            font-size: 11px;
-            border: 1px solid transparent;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
         }
 
         .preset-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .preset-item.selected {
-            background: rgba(238, 27, 46, 0.25);
-            border-color: rgba(238, 27, 46, 0.6);
-            box-shadow: 0 0 0 1px rgba(238, 27, 46, 0.3);
+            background: rgba(238, 27, 46, 0.1);
+            border-color: rgba(238, 27, 46, 0.85);
+        }
+
+        .preset-check {
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 7px;
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            font-size: 12px;
+            font-weight: 700;
+            color: white;
+            transition: all 0.15s ease;
+        }
+
+        .preset-item.selected .preset-check {
+            background: #ee1b2e;
+            border-color: #ee1b2e;
         }
 
         .preset-name {
@@ -316,30 +473,33 @@ export class SettingsView extends LitElement {
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
-            font-weight: 300;
+            font-weight: 500;
         }
 
         .preset-item.selected .preset-name {
-            font-weight: 500;
+            font-weight: 600;
         }
 
         .preset-status {
-            font-size: 9px;
-            color: rgba(238, 27, 46, 0.8);
-            font-weight: 500;
+            font-size: 10px;
+            font-weight: 600;
+            color: #ff8a95;
+            background: rgba(238, 27, 46, 0.18);
+            padding: 3px 9px;
+            border-radius: 999px;
             margin-left: 6px;
         }
 
         .no-presets-message {
-            padding: 12px 8px;
+            padding: 16px 10px;
             text-align: center;
             color: rgba(255, 255, 255, 0.5);
-            font-size: 10px;
-            line-height: 1.4;
+            font-size: 12px;
+            line-height: 1.5;
         }
 
         .no-presets-message .web-link {
-            color: rgba(238, 27, 46, 0.8);
+            color: #ff8a95;
             text-decoration: underline;
             cursor: pointer;
         }
@@ -497,6 +657,7 @@ export class SettingsView extends LitElement {
         selectedStt: { type: String, state: true },
         isLlmListVisible: { type: Boolean },
         isSttListVisible: { type: Boolean },
+        activeTab: { type: String, state: true },
         presets: { type: Array, state: true },
         selectedPreset: { type: Object, state: true },
         showPresets: { type: Boolean, state: true },
@@ -530,6 +691,7 @@ export class SettingsView extends LitElement {
         this.presets = [];
         this.selectedPreset = null;
         this.showPresets = false;
+        this.activeTab = 'agentes';
         // Ollama related
         this.ollamaStatus = { installed: false, running: false };
         this.ollamaModels = [];
@@ -975,13 +1137,16 @@ export class SettingsView extends LitElement {
     }
 
     setupEventListeners() {
-        this.addEventListener('mouseenter', this.handleMouseEnter);
-        this.addEventListener('mouseleave', this.handleMouseLeave);
+        // A janela agora abre/fecha por clique (engrenagem do header e botão ✕),
+        // então não há mais auto-hide por hover.
     }
 
-    cleanupEventListeners() {
-        this.removeEventListener('mouseenter', this.handleMouseEnter);
-        this.removeEventListener('mouseleave', this.handleMouseLeave);
+    cleanupEventListeners() {}
+
+    handleClose() {
+        if (window.api) {
+            window.api.settingsView.hideSettingsWindow();
+        }
     }
 
     setupIpcListeners() {
@@ -1408,114 +1573,148 @@ export class SettingsView extends LitElement {
             </div>
         `;
 
+        const icon = (paths) => html`
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>
+        `;
+
+        const tabs = [
+            { id: 'agentes', label: 'Agentes', icon: icon(svg`<path d="M12 3l1.9 4.9L19 9.8l-4.6 1.6L12 16.5l-2.4-5.1L5 9.8l5.1-1.9L12 3z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/>`) },
+            { id: 'conta', label: 'Conta', icon: icon(svg`<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.2 3.6-5 7-5s6.2 1.8 7 5"/>`) },
+            { id: 'modelos', label: 'Modelos & API', icon: icon(svg`<rect x="5.5" y="5.5" width="13" height="13" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>`) },
+            { id: 'atalhos', label: 'Atalhos', icon: icon(svg`<rect x="3" y="6.5" width="18" height="11" rx="2.5"/><path d="M7.5 14h9M7 10.5h.01M10.5 10.5h.01M14 10.5h.01M17 10.5h.01"/>`) },
+            { id: 'geral', label: 'Geral', icon: icon(svg`<path d="M4 8h9M17.5 8H20M4 16h2.5M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="8.5" cy="16" r="2.2"/>`) },
+        ];
+
+        const agentesPane = html`
+            <h2 class="content-title">Agentes</h2>
+            <p class="content-hint">
+                O agente ativo guia as sugestões ao vivo durante a call.
+                Clique para ativar; clique no ativo para voltar ao playbook padrão (Closer).
+            </p>
+            <div class="preset-list">
+                ${this.presets.length === 0 ? html`
+                    <div class="no-presets-message">
+                        Nenhum agente ainda.<br>
+                        <span class="web-link" @click=${this.handlePersonalize}>
+                            Criar seu primeiro agente
+                        </span>
+                    </div>
+                ` : this.presets.map(preset => html`
+                    <div class="preset-item ${preset.is_active === 1 ? 'selected' : ''}"
+                         @click=${() => this.handlePresetSelect(preset)}>
+                        <span class="preset-check">${preset.is_active === 1 ? '✓' : ''}</span>
+                        <span class="preset-name">${preset.title}</span>
+                        ${preset.is_active === 1 ? html`<span class="preset-status">Ativo</span>` : ''}
+                    </div>
+                `)}
+            </div>
+            <div class="buttons-section">
+                <button class="settings-button primary full-width" @click=${this.handlePersonalize}>
+                    <span>Criar / editar agentes</span>
+                </button>
+            </div>
+        `;
+
+        const contaPane = html`
+            <h2 class="content-title">Conta</h2>
+            <div class="account-info" style="margin-bottom: 8px;">
+                ${this.firebaseUser
+                    ? html`Conta: ${this.firebaseUser.email || 'conectada'}`
+                    : 'Conta: não conectada'}
+            </div>
+            ${v4AuthHTML}
+            <div class="buttons-section">
+                ${this.firebaseUser
+                    ? html`
+                        <button class="settings-button full-width danger" @click=${this.handleFirebaseLogout}>
+                            <span>Logout</span>
+                        </button>`
+                    : html`
+                        <button class="settings-button full-width" @click=${this.handleUsePicklesKey}>
+                            <span>Login</span>
+                        </button>`
+                }
+            </div>
+        `;
+
+        const modelosPane = html`
+            <h2 class="content-title">Modelos & API</h2>
+            ${apiKeyManagementHTML}
+            ${modelSelectionHTML}
+        `;
+
+        const atalhosPane = html`
+            <h2 class="content-title">Atalhos</h2>
+            <div class="shortcuts-section">
+                ${this.getMainShortcuts().map(shortcut => html`
+                    <div class="shortcut-item">
+                        <span class="shortcut-name">${shortcut.name}</span>
+                        <div class="shortcut-keys">
+                            ${this.renderShortcutKeys(shortcut.accelerator)}
+                        </div>
+                    </div>
+                `)}
+            </div>
+            <div class="buttons-section">
+                <button class="settings-button full-width" @click=${this.openShortcutEditor}>
+                    Editar atalhos
+                </button>
+            </div>
+        `;
+
+        const geralPane = html`
+            <h2 class="content-title">Geral</h2>
+            <div class="buttons-section">
+                <button class="settings-button full-width" @click=${this.handleToggleAutoUpdate} ?disabled=${this.autoUpdateLoading}>
+                    <span>Atualizações automáticas: ${this.autoUpdateEnabled ? 'Ativadas' : 'Desativadas'}</span>
+                </button>
+                <button class="settings-button full-width" @click=${this.handleToggleInvisibility}>
+                    <span>${this.isContentProtectionOn ? 'Desativar invisibilidade' : 'Ativar invisibilidade'}</span>
+                </button>
+                <div class="move-buttons">
+                    <button class="settings-button half-width" @click=${this.handleMoveLeft}>
+                        <span>← Mover</span>
+                    </button>
+                    <button class="settings-button half-width" @click=${this.handleMoveRight}>
+                        <span>Mover →</span>
+                    </button>
+                </div>
+                <button class="settings-button full-width" @click=${this.handlePersonalize}>
+                    <span>Abrir painel web</span>
+                </button>
+            </div>
+        `;
+
+        const panes = {
+            agentes: agentesPane,
+            conta: contaPane,
+            modelos: modelosPane,
+            atalhos: atalhosPane,
+            geral: geralPane,
+        };
+
         return html`
             <div class="settings-container">
-                <div class="header-section">
-                    <div>
-                        <h1 class="app-title">Pickle Glass</h1>
-                        <div class="account-info">
-                            ${this.firebaseUser
-                                ? html`Account: ${this.firebaseUser.email || 'Logged In'}`
-                                : `Account: Not Logged In`
-                            }
-                        </div>
-                    </div>
-                    <div class="invisibility-icon ${this.isContentProtectionOn ? 'visible' : ''}" title="Invisibility is On">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9.785 7.41787C8.7 7.41787 7.79 8.19371 7.55667 9.22621C7.0025 8.98704 6.495 9.05121 6.11 9.22037C5.87083 8.18204 4.96083 7.41787 3.88167 7.41787C2.61583 7.41787 1.58333 8.46204 1.58333 9.75121C1.58333 11.0404 2.61583 12.0845 3.88167 12.0845C5.08333 12.0845 6.06333 11.1395 6.15667 9.93787C6.355 9.79787 6.87417 9.53537 7.51 9.94954C7.615 11.1454 8.58333 12.0845 9.785 12.0845C11.0508 12.0845 12.0833 11.0404 12.0833 9.75121C12.0833 8.46204 11.0508 7.41787 9.785 7.41787ZM3.88167 11.4195C2.97167 11.4195 2.2425 10.6729 2.2425 9.75121C2.2425 8.82954 2.9775 8.08287 3.88167 8.08287C4.79167 8.08287 5.52083 8.82954 5.52083 9.75121C5.52083 10.6729 4.79167 11.4195 3.88167 11.4195ZM9.785 11.4195C8.875 11.4195 8.14583 10.6729 8.14583 9.75121C8.14583 8.82954 8.875 8.08287 9.785 8.08287C10.695 8.08287 11.43 8.82954 11.43 9.75121C11.43 10.6729 10.6892 11.4195 9.785 11.4195ZM12.6667 5.95954H1V6.83454H12.6667V5.95954ZM8.8925 1.36871C8.76417 1.08287 8.4375 0.931207 8.12833 1.03037L6.83333 1.46204L5.5325 1.03037L5.50333 1.02454C5.19417 0.93704 4.8675 1.10037 4.75083 1.39787L3.33333 5.08454H10.3333L8.91 1.39787L8.8925 1.36871Z" fill="white"/>
-                        </svg>
-                    </div>
-                </div>
+                <button class="close-button" title="Fechar" @click=${this.handleClose}>✕</button>
 
-                ${v4AuthHTML}
-                ${apiKeyManagementHTML}
-                ${modelSelectionHTML}
-
-                <div class="buttons-section" style="border-top: 1px solid rgba(255, 255, 255, 0.1); padding-top: 6px; margin-top: 6px;">
-                    <button class="settings-button full-width" @click=${this.openShortcutEditor}>
-                        Edit Shortcuts
-                    </button>
-                </div>
-
-                
-                <div class="shortcuts-section">
-                    ${this.getMainShortcuts().map(shortcut => html`
-                        <div class="shortcut-item">
-                            <span class="shortcut-name">${shortcut.name}</span>
-                            <div class="shortcut-keys">
-                                ${this.renderShortcutKeys(shortcut.accelerator)}
-                            </div>
+                <div class="sidebar">
+                    <div class="sidebar-title">Copiloto V4</div>
+                    ${tabs.map(tab => html`
+                        <div class="nav-item ${this.activeTab === tab.id ? 'active' : ''}"
+                             @click=${() => { this.activeTab = tab.id; }}>
+                            <span class="nav-icon">${tab.icon}</span>
+                            ${tab.label}
                         </div>
                     `)}
-                </div>
-
-                <div class="preset-section">
-                    <div class="preset-header">
-                        <span class="preset-title">
-                            Agentes
-                            <span class="preset-count">(${this.presets.length})</span>
-                        </span>
-                        <span class="preset-toggle" @click=${this.togglePresets}>
-                            ${this.showPresets ? '▼' : '▶'}
-                        </span>
-                    </div>
-
-                    <div class="preset-list ${this.showPresets ? '' : 'hidden'}">
-                        ${this.presets.length === 0 ? html`
-                            <div class="no-presets-message">
-                                Nenhum agente ainda.<br>
-                                <span class="web-link" @click=${this.handlePersonalize}>
-                                    Criar seu primeiro agente
-                                </span>
-                            </div>
-                        ` : this.presets.map(preset => html`
-                            <div class="preset-item ${preset.is_active === 1 ? 'selected' : ''}"
-                                 @click=${() => this.handlePresetSelect(preset)}>
-                                <span class="preset-name">${preset.title}</span>
-                                ${preset.is_active === 1 ? html`<span class="preset-status">Ativo</span>` : ''}
-                            </div>
-                        `)}
+                    <div class="sidebar-footer">
+                        <button class="settings-button full-width danger" @click=${this.handleQuit}>
+                            <span>Sair do Copiloto</span>
+                        </button>
                     </div>
                 </div>
 
-                <div class="buttons-section">
-                    <button class="settings-button full-width" @click=${this.handlePersonalize}>
-                        <span>Personalize / Meeting Notes</span>
-                    </button>
-                    <button class="settings-button full-width" @click=${this.handleToggleAutoUpdate} ?disabled=${this.autoUpdateLoading}>
-                        <span>Automatic Updates: ${this.autoUpdateEnabled ? 'On' : 'Off'}</span>
-                    </button>
-                    
-                    <div class="move-buttons">
-                        <button class="settings-button half-width" @click=${this.handleMoveLeft}>
-                            <span>← Move</span>
-                        </button>
-                        <button class="settings-button half-width" @click=${this.handleMoveRight}>
-                            <span>Move →</span>
-                        </button>
-                    </div>
-                    
-                    <button class="settings-button full-width" @click=${this.handleToggleInvisibility}>
-                        <span>${this.isContentProtectionOn ? 'Disable Invisibility' : 'Enable Invisibility'}</span>
-                    </button>
-                    
-                    <div class="bottom-buttons">
-                        ${this.firebaseUser
-                            ? html`
-                                <button class="settings-button half-width danger" @click=${this.handleFirebaseLogout}>
-                                    <span>Logout</span>
-                                </button>
-                                `
-                            : html`
-                                <button class="settings-button half-width" @click=${this.handleUsePicklesKey}>
-                                    <span>Login</span>
-                                </button>
-                                `
-                        }
-                        <button class="settings-button half-width danger" @click=${this.handleQuit}>
-                            <span>Quit</span>
-                        </button>
-                    </div>
+                <div class="content-area">
+                    ${panes[this.activeTab] || agentesPane}
                 </div>
             </div>
         `;

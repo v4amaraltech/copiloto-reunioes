@@ -72,6 +72,12 @@ const cancelHideSettingsWindow = () => {
     internalBridge.emit('window:requestVisibility', { name: 'settings', visible: true });
 };
 
+const toggleSettingsWindow = () => {
+    const settings = windowPool.get('settings');
+    const isVisible = settings && !settings.isDestroyed() && settings.isVisible();
+    internalBridge.emit('window:requestVisibility', { name: 'settings', visible: !isVisible });
+};
+
 const moveWindowStep = (direction) => {
     internalBridge.emit('window:moveStep', { direction });
 };
@@ -524,7 +530,7 @@ function createFeatureWindows(header, namesToCreate) {
 
             // settings
             case 'settings': {
-                const settings = new BrowserWindow({ ...commonChildOptions, width:240, maxHeight:400, parent:undefined });
+                const settings = new BrowserWindow({ ...commonChildOptions, width:760, height:520, parent:undefined });
                 settings.setContentProtection(isContentProtectionOn);
                 settings.setVisibleOnAllWorkspaces(true,{visibleOnFullScreen:true});
                 if (process.platform === 'darwin') {
@@ -805,6 +811,7 @@ module.exports = {
     showSettingsWindow,
     hideSettingsWindow,
     cancelHideSettingsWindow,
+    toggleSettingsWindow,
     openLoginPage,
     moveWindowStep,
     handleHeaderStateChanged,

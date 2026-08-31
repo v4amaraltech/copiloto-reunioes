@@ -17,7 +17,7 @@ const store = new Store({
 
 // Configuration constants
 const NOTIFICATION_CONFIG = {
-    RELEVANT_WINDOW_TYPES: ['settings', 'main'],
+    RELEVANT_WINDOW_TYPES: ['settings', 'main', 'header'],
     DEBOUNCE_DELAY: 300, // prevent spam during bulk operations (ms)
     MAX_RETRY_ATTEMPTS: 3,
     RETRY_BASE_DELAY: 1000, // exponential backoff base (ms)

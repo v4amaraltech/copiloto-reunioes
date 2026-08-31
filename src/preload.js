@@ -111,7 +111,14 @@ contextBridge.exposeInMainWorld('api', {
     cancelHideSettingsWindow: () => ipcRenderer.send('cancel-hide-settings-window'),
     showSettingsWindow: () => ipcRenderer.send('show-settings-window'),
     hideSettingsWindow: () => ipcRenderer.send('hide-settings-window'),
-    
+    toggleSettingsWindow: () => ipcRenderer.send('toggle-settings-window'),
+
+    // Agente ativo (seletor no header)
+    getPresets: () => ipcRenderer.invoke('settings:getPresets'),
+    setActivePreset: (id) => ipcRenderer.invoke('settings:setActivePreset', id),
+    onPresetsUpdated: (callback) => ipcRenderer.on('presets-updated', callback),
+    removeOnPresetsUpdated: (callback) => ipcRenderer.removeListener('presets-updated', callback),
+
     // Generic invoke (for dynamic channel names)
     // invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
     sendListenButtonClick: (listenButtonText) => ipcRenderer.invoke('listen:changeSession', listenButtonText),

@@ -82,9 +82,9 @@ class WindowLayoutManager {
         const { x: workAreaX, y: workAreaY, width: screenWidth, height: screenHeight } = display.workArea;
 
         const PAD = 5;
-        const buttonPadding = 170;
 
-        const x = headerBounds.x + headerBounds.width - settingsBounds.width + buttonPadding;
+        // Janela de configurações centralizada horizontalmente sob o header
+        const x = headerBounds.x + (headerBounds.width - settingsBounds.width) / 2;
         const y = headerBounds.y + headerBounds.height + PAD;
 
         const clampedX = Math.max(workAreaX + 10, Math.min(workAreaX + screenWidth - settingsBounds.width - 10, x));
