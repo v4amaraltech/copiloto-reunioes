@@ -14,9 +14,7 @@ contextBridge.exposeInMainWorld('api', {
   common: {
     // User & Auth
     getCurrentUser: () => ipcRenderer.invoke('get-current-user'),
-    startFirebaseAuth: () => ipcRenderer.invoke('start-firebase-auth'),
-    firebaseLogout: () => ipcRenderer.invoke('firebase-logout'),
-    
+
     // App Control
       quitApplication: () => ipcRenderer.invoke('quit-application'),
       openExternal: (url) => ipcRenderer.invoke('open-external', url),
@@ -220,8 +218,6 @@ contextBridge.exposeInMainWorld('api', {
     // User & Auth
     getCurrentUser: () => ipcRenderer.invoke('get-current-user'),
     openPersonalizePage: () => ipcRenderer.invoke('open-personalize-page'),
-    firebaseLogout: () => ipcRenderer.invoke('firebase-logout'),
-    startFirebaseAuth: () => ipcRenderer.invoke('start-firebase-auth'),
 
     // V4 Auth (Supabase) - login dos closers
     v4Login: (email, password) => ipcRenderer.invoke('v4auth:login', { email, password }),

@@ -642,7 +642,6 @@ export class SettingsView extends LitElement {
     //////// after_modelStateService ////////
     static properties = {
         shortcuts: { type: Object, state: true },
-        firebaseUser: { type: Object, state: true },
         v4Auth: { type: Object, state: true },
         v4LoginError: { type: String, state: true },
         v4LoggingIn: { type: Boolean, state: true },
@@ -676,7 +675,6 @@ export class SettingsView extends LitElement {
         super();
         //////// after_modelStateService ////////
         this.shortcuts = {};
-        this.firebaseUser = null;
         this.apiKeys = { openai: '', gemini: '', anthropic: '', whisper: '' };
         this.providerConfig = {};
         this.isLoading = true;
@@ -699,7 +697,6 @@ export class SettingsView extends LitElement {
         // Whisper related
         this.whisperModels = [];
         this.whisperProgressTracker = null; // Will be initialized when needed
-        this.handleUsePicklesKey = this.handleUsePicklesKey.bind(this)
         this.autoUpdateEnabled = true;
         this.autoUpdateLoading = true;
         this.loadInitialData();
@@ -785,8 +782,6 @@ export class SettingsView extends LitElement {
                 window.api.settingsView.getContentProtectionStatus(),
                 window.api.settingsView.getCurrentShortcuts()
             ]);
-            
-            if (userState && userState.isLoggedIn) this.firebaseUser = userState;
             
             if (modelSettings.success) {
                 const { config, storedKeys, availableLlm, availableStt, selectedModels } = modelSettings.data;
@@ -1096,13 +1091,6 @@ export class SettingsView extends LitElement {
     }
 
 
-    handleUsePicklesKey(e) {
-        e.preventDefault()
-        if (this.wasJustDragged) return
-    
-        console.log("Requesting Firebase authentication from main process...")
-        window.api.settingsView.startFirebaseAuth();
-    }
     //////// after_modelStateService ////////
 
     openShortcutEditor() {
@@ -1154,13 +1142,8 @@ export class SettingsView extends LitElement {
         
         this._userStateListener = (event, userState) => {
             console.log('[SettingsView] Received user-state-changed:', userState);
-            if (userState && userState.isLoggedIn) {
-                this.firebaseUser = userState;
-            } else {
-                this.firebaseUser = null;
-            }
             this.loadAutoUpdateSetting();
-            // Reload model settings when user state changes (Firebase login/logout)
+            // Reload model settings when user state changes
             this.loadInitialData();
         };
         
@@ -1346,11 +1329,6 @@ export class SettingsView extends LitElement {
         window.api.settingsView.quitApplication();
     }
 
-    handleFirebaseLogout() {
-        console.log('Firebase Logout clicked');
-        window.api.settingsView.firebaseLogout();
-    }
-
     async handleOllamaShutdown() {
         console.log('[SettingsView] Shutting down Ollama service...');
         
@@ -1391,8 +1369,6 @@ export class SettingsView extends LitElement {
                 </div>
             `;
         }
-
-        const loggedIn = !!this.firebaseUser;
 
         const v4AuthHTML = html`
             <div class="api-key-section">
@@ -1478,7 +1454,7 @@ export class SettingsView extends LitElement {
                         <div class="provider-key-group">
                             <label for="key-input-${id}">${config.name} API Key</label>
                             <input type="password" id="key-input-${id}"
-                                placeholder=${loggedIn ? "Using Pickle's Key" : `Enter ${config.name} API Key`} 
+                                placeholder=${`Enter ${config.name} API Key`}
                                 .value=${this.apiKeys[id] || ''}
                             >
                             <div class="key-buttons">
@@ -1616,24 +1592,7 @@ export class SettingsView extends LitElement {
 
         const contaPane = html`
             <h2 class="content-title">Conta</h2>
-            <div class="account-info" style="margin-bottom: 8px;">
-                ${this.firebaseUser
-                    ? html`Conta: ${this.firebaseUser.email || 'conectada'}`
-                    : 'Conta: não conectada'}
-            </div>
             ${v4AuthHTML}
-            <div class="buttons-section">
-                ${this.firebaseUser
-                    ? html`
-                        <button class="settings-button full-width danger" @click=${this.handleFirebaseLogout}>
-                            <span>Logout</span>
-                        </button>`
-                    : html`
-                        <button class="settings-button full-width" @click=${this.handleUsePicklesKey}>
-                            <span>Login</span>
-                        </button>`
-                }
-            </div>
         `;
 
         const modelosPane = html`

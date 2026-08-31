@@ -161,13 +161,11 @@ export class WelcomeHeader extends LitElement {
     `;
 
     static properties = {
-        loginCallback: { type: Function },
         apiKeyCallback: { type: Function },
     };
 
     constructor() {
         super();
-        this.loginCallback = () => {};
         this.apiKeyCallback = () => {};
         this.handleClose = this.handleClose.bind(this);
     }

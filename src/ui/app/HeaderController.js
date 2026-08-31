@@ -33,7 +33,6 @@ class HeaderTransitionManager {
             // Create new header element
             if (type === 'welcome') {
                 this.welcomeHeader = document.createElement('welcome-header');
-                this.welcomeHeader.loginCallback = () => this.handleLoginOption();
                 this.welcomeHeader.apiKeyCallback = () => this.handleApiKeyOption();
                 this.headerContainer.appendChild(this.welcomeHeader);
                 console.log('[HeaderController] ensureHeader: Header of type:', type, 'created.');
@@ -72,7 +71,6 @@ class HeaderTransitionManager {
         console.log('[HeaderController] Manager initialized');
 
         // WelcomeHeader 콜백 메서드들
-        this.handleLoginOption = this.handleLoginOption.bind(this);
         this.handleApiKeyOption = this.handleApiKeyOption.bind(this);
 
         this._bootstrap();
@@ -145,13 +143,6 @@ class HeaderTransitionManager {
     }
 
     // WelcomeHeader 콜백 메서드들
-    async handleLoginOption() {
-        console.log('[HeaderController] Login option selected');
-        if (window.api) {
-            await window.api.common.startFirebaseAuth();
-        }
-    }
-
     async handleApiKeyOption() {
         console.log('[HeaderController] API key option selected');
         await this._resizeForApiKey(400);
@@ -201,17 +192,7 @@ class HeaderTransitionManager {
             }
         }
 
-        let initialHeight = 256;
-        if (window.api) {
-            try {
-                const userState = await window.api.common.getCurrentUser();
-                if (userState.mode === 'firebase') {
-                    initialHeight = 280;
-                }
-            } catch (e) {
-                console.error('Could not get user state for resize', e);
-            }
-        }
+        const initialHeight = 256;
 
         await this._resizeForPermissionHeader(initialHeight);
         this.ensureHeader('permission');
