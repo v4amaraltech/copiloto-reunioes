@@ -261,14 +261,9 @@ class AskService {
 
             const conversationHistory = this._formatConversationForPrompt(conversationHistoryRaw);
 
-            // Briefing do lead entra no system prompt; a conversa recente vai na mensagem
-            // de usuário (mantém o system estável para o prompt caching).
-            let leadBriefing = '';
-            try {
-                leadBriefing = require('../listen/listenService').getLeadBriefing() || '';
-            } catch (_) { /* listen ainda não inicializado */ }
-
             // Agente ativo entra como contexto adicional na resposta do Ask.
+            // (A conversa recente vai na mensagem de usuário — mantém o system
+            // estável para o prompt caching.)
             let agentContext = '';
             try {
                 const activeAgent = await require('../settings/settingsService').getActivePreset();
@@ -277,7 +272,7 @@ class AskService {
                 }
             } catch (_) { /* sem agente ativo */ }
 
-            const systemPrompt = getSystemPrompt('v4_ask', agentContext + leadBriefing, false);
+            const systemPrompt = getSystemPrompt('v4_ask', agentContext, false);
 
             const userText = conversationHistory && conversationHistory !== 'No conversation history available.'
                 ? `Conversa recente (me = closer, them = lead):\n${conversationHistory}\n\nPergunta do closer: ${userPrompt.trim()}`

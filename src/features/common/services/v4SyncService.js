@@ -9,8 +9,6 @@ const { app } = require('electron');
 const { V4_SUPABASE_URL } = require('../config/v4Config');
 
 const SAVE_TRANSCRIPT_URL = `${V4_SUPABASE_URL}/functions/v1/save-transcript`;
-const BRIEFING_LOOKUP_URL = `${V4_SUPABASE_URL}/functions/v1/briefing-lookup`;
-const LEADS_SEARCH_URL = `${V4_SUPABASE_URL}/functions/v1/leads-search`;
 
 class V4SyncService {
     constructor() {
@@ -63,7 +61,6 @@ class V4SyncService {
 
         return {
             local_session_id: sessionId,
-            lead_briefing: this._leadBriefing || null,
             started_at: toIso(session?.started_at),
             ended_at: toIso(session?.ended_at) || new Date().toISOString(),
             transcripts: transcripts.map((t, i) => ({
@@ -73,10 +70,6 @@ class V4SyncService {
                 spoken_at: toIso(t.start_at),
             })),
         };
-    }
-
-    setLeadBriefing(text) {
-        this._leadBriefing = text || null;
     }
 
     /**
@@ -122,49 +115,6 @@ class V4SyncService {
             if (!skipQueueOnFail) this._enqueue(sessionId);
             return { success: false, error: err.message };
         }
-    }
-
-    /**
-     * Busca o briefing da próxima reunião: Calendar (n8n) → match no Enriquece AI.
-     * Retorna { found, matched, event, lead_id, briefing } ou { found:false }.
-     */
-    async fetchBriefing() {
-        const v4AuthService = require('./v4AuthService');
-        const token = await v4AuthService.getAccessToken();
-        if (!token) return { found: false, error: 'not_logged_in' };
-
-        const resp = await fetch(BRIEFING_LOOKUP_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-            body: '{}',
-        });
-        const result = await resp.json().catch(() => ({}));
-        if (!resp.ok) {
-            throw new Error(result.error || `HTTP ${resp.status}`);
-        }
-        return result;
-    }
-
-    /** Busca manual de leads (fallback do briefing). Retorna [{lead_id, label, briefing}]. */
-    async searchLeads(query) {
-        const v4AuthService = require('./v4AuthService');
-        const token = await v4AuthService.getAccessToken();
-        if (!token) throw new Error('Faça login V4 nas Configurações primeiro.');
-
-        const resp = await fetch(LEADS_SEARCH_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ query }),
-        });
-        const result = await resp.json().catch(() => ({}));
-        if (!resp.ok) throw new Error(result.error || `HTTP ${resp.status}`);
-        return result.results || [];
     }
 
     /** Reenvia sessões pendentes (chamado no boot). */

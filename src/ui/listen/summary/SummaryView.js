@@ -232,94 +232,6 @@ export class SummaryView extends LitElement {
             font-style: italic;
         }
 
-        .briefing-section {
-            padding: 6px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .briefing-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.8);
-            padding: 4px 0;
-        }
-
-        .briefing-status {
-            font-size: 10px;
-            font-weight: 400;
-            color: rgba(120, 220, 140, 0.9);
-        }
-
-        .briefing-textarea {
-            width: 100%;
-            min-height: 90px;
-            box-sizing: border-box;
-            margin-top: 6px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 6px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 11px;
-            font-family: inherit;
-            padding: 8px;
-            resize: vertical;
-        }
-
-        .briefing-save {
-            margin-top: 6px;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 11px;
-            padding: 4px 12px;
-            cursor: pointer;
-        }
-
-        .briefing-save:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .lead-search-row {
-            display: flex;
-            gap: 6px;
-            margin-top: 6px;
-        }
-
-        .lead-search-input {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 5px;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 11px;
-            padding: 5px 8px;
-        }
-
-        .lead-search-error {
-            font-size: 10px;
-            color: rgba(255, 160, 120, 0.95);
-            margin-top: 4px;
-        }
-
-        .lead-result {
-            margin-top: 4px;
-            padding: 5px 8px;
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 5px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.9);
-            cursor: pointer;
-        }
-
-        .lead-result:hover {
-            background: rgba(238, 27, 46, 0.25);
-        }
-
         .suggestion-current {
             margin: 4px 12px 10px 12px;
             padding: 12px 14px;
@@ -383,16 +295,10 @@ export class SummaryView extends LitElement {
         structuredData: { type: Object },
         isVisible: { type: Boolean },
         hasCompletedRecording: { type: Boolean },
-        briefingOpen: { type: Boolean },
-        briefingText: { type: String },
-        briefingSaved: { type: Boolean },
         streamingText: { type: String },
         isStreaming: { type: Boolean },
         suggestionHistory: { type: Array },
         copied: { type: Boolean },
-        leadResults: { type: Array },
-        leadSearchError: { type: String },
-        leadSearching: { type: Boolean },
     };
 
     constructor() {
@@ -404,16 +310,10 @@ export class SummaryView extends LitElement {
             followUps: [],
         };
         this.isVisible = true;
-        this.briefingOpen = false;
-        this.briefingText = '';
-        this.briefingSaved = false;
         this.streamingText = '';
         this.isStreaming = false;
         this.suggestionHistory = [];
         this.copied = false;
-        this.leadResults = [];
-        this.leadSearchError = '';
-        this.leadSearching = false;
         this.hasCompletedRecording = false;
 
         // 마크다운 라이브러리 초기화
@@ -452,15 +352,6 @@ export class SummaryView extends LitElement {
                 this.streamingText = text;
                 this.isStreaming = !done;
             });
-            window.api.summaryView.getLeadBriefing().then(text => {
-                this.briefingText = text || '';
-                this.briefingSaved = !!text;
-            }).catch(() => {});
-            window.api.summaryView.onBriefingUpdated((event, { briefing }) => {
-                this.briefingText = briefing || '';
-                this.briefingSaved = !!briefing;
-                this.briefingOpen = false;
-            });
         }
     }
 
@@ -472,57 +363,11 @@ export class SummaryView extends LitElement {
         } catch (_) {}
     }
 
-    async searchLead() {
-        const input = this.shadowRoot.querySelector('.lead-search-input');
-        const query = input ? input.value.trim() : '';
-        if (query.length < 2) {
-            this.leadSearchError = 'Digite pelo menos 2 caracteres.';
-            return;
-        }
-        this.leadSearching = true;
-        this.leadSearchError = '';
-        this.leadResults = [];
-        try {
-            this.leadResults = await window.api.summaryView.searchLeads(query);
-            if (this.leadResults.length === 0) this.leadSearchError = 'Nenhum lead encontrado.';
-        } catch (err) {
-            this.leadSearchError = err.message || 'Erro na busca.';
-        } finally {
-            this.leadSearching = false;
-        }
-    }
-
-    async selectLead(result) {
-        try {
-            await window.api.summaryView.setLeadBriefing(result.briefing);
-            this.briefingText = result.briefing;
-            this.briefingSaved = true;
-            this.briefingOpen = false;
-            this.leadResults = [];
-        } catch (err) {
-            this.leadSearchError = err.message;
-        }
-    }
-
-    async saveBriefing() {
-        const textarea = this.shadowRoot.querySelector('.briefing-textarea');
-        const text = textarea ? textarea.value : '';
-        this.briefingText = text;
-        try {
-            await window.api.summaryView.setLeadBriefing(text);
-            this.briefingSaved = !!text.trim();
-            this.briefingOpen = false;
-        } catch (err) {
-            console.error('[SummaryView] Failed to save briefing:', err);
-        }
-    }
-
     disconnectedCallback() {
         super.disconnectedCallback();
         if (window.api) {
             window.api.summaryView.removeAllSummaryUpdateListeners();
             window.api.summaryView.removeAllSummaryStreamListeners();
-            window.api.summaryView.removeAllBriefingUpdatedListeners();
         }
     }
 
@@ -707,12 +552,6 @@ export class SummaryView extends LitElement {
 
         return html`
             <div class="insights-container">
-                <!-- Briefing sem UI (decisão de UX): o card BANT continua chegando via
-                     briefing automático/Calendar e alimentando o system prompt do
-                     copiloto — apenas não é mais exibido nem editado aqui. -->
-                ${this.briefingSaved
-                    ? html`<div class="briefing-section"><div class="briefing-toggle"><span>Briefing do lead</span><span class="briefing-status">● carregado no copiloto</span></div></div>`
-                    : ''}
                 ${this.isStreaming
                     ? html`
                           <insights-title>Sugestão</insights-title>

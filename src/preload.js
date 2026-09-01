@@ -198,19 +198,12 @@ contextBridge.exposeInMainWorld('api', {
     // Message Handling
     sendQuestionFromSummary: (text) => ipcRenderer.invoke('ask:sendQuestionFromSummary', text),
 
-    // Briefing do lead (automático via Calendar; manual como fallback)
-    setLeadBriefing: (text) => ipcRenderer.invoke('listen:setLeadBriefing', text),
-    getLeadBriefing: () => ipcRenderer.invoke('listen:getLeadBriefing'),
-    searchLeads: (query) => ipcRenderer.invoke('v4:searchLeads', query),
-
     // Listeners
     onSummaryUpdate: (callback) => ipcRenderer.on('summary-update', callback),
     removeOnSummaryUpdate: (callback) => ipcRenderer.removeListener('summary-update', callback),
     removeAllSummaryUpdateListeners: () => ipcRenderer.removeAllListeners('summary-update'),
     onSummaryStream: (callback) => ipcRenderer.on('summary-stream', callback),
-    removeAllSummaryStreamListeners: () => ipcRenderer.removeAllListeners('summary-stream'),
-    onBriefingUpdated: (callback) => ipcRenderer.on('briefing-updated', callback),
-    removeAllBriefingUpdatedListeners: () => ipcRenderer.removeAllListeners('briefing-updated')
+    removeAllSummaryStreamListeners: () => ipcRenderer.removeAllListeners('summary-stream')
   },
 
   // src/ui/settings/SettingsView.js

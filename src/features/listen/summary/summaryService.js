@@ -22,7 +22,6 @@ class SummaryService {
         this.currentSessionId = null;
         this.analysisInFlight = false;
         this.analysisPending = false;
-        this.leadBriefing = '';
         this.lastSuggestionAt = 0;
         this.lastMeActivityAt = 0;
         this.lastThemActivityAt = 0;
@@ -50,19 +49,6 @@ class SummaryService {
 
     setSessionId(sessionId) {
         this.currentSessionId = sessionId;
-    }
-
-    /**
-     * Briefing do lead da call atual (Sprint 1: colado manualmente na UI;
-     * Sprint 2: preenchido automaticamente via Calendar → Enriquece AI).
-     */
-    setLeadBriefing(text) {
-        this.leadBriefing = (text || '').trim();
-        console.log(`[SummaryService] Lead briefing ${this.leadBriefing ? `set (${this.leadBriefing.length} chars)` : 'cleared'}`);
-    }
-
-    getLeadBriefing() {
-        return this.leadBriefing;
     }
 
     sendToRenderer(channel, data) {
@@ -179,7 +165,6 @@ class SummaryService {
         const recentConversation = this.formatConversationForPrompt(conversationTexts, maxTurns);
 
         // System prompt estável (bom para prompt caching); a janela de conversa vai na mensagem de usuário.
-        // O briefing do lead entra na seção "User-provided context" do system prompt.
         // Se houver um agente ativo (criado pelo usuário), o prompt dele substitui o playbook padrão.
         let agentPrompt = '';
         try {
@@ -193,7 +178,7 @@ class SummaryService {
         } catch (err) {
             console.error('[SummaryService] Failed to load active agent, using default playbook:', err.message);
         }
-        const systemPrompt = getSystemPrompt('v4_sales_copilot', this.leadBriefing, false, agentPrompt);
+        const systemPrompt = getSystemPrompt('v4_sales_copilot', '', false, agentPrompt);
 
         const lastSuggestion = this.previousAnalysisResult?.suggestion || '';
         const antiRepeat = lastSuggestion
