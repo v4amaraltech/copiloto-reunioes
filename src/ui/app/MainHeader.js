@@ -431,22 +431,41 @@ export class MainHeader extends LitElement {
     async handleMouseDown(e) {
         e.preventDefault();
 
-        const initialPosition = await window.api.mainHeader.getHeaderPosition();
-
-        this.dragState = {
+        // O estado e os listeners precisam existir ANTES do await: se o botão for
+        // solto enquanto a posição da janela não chegou, o mouseup tem que ser ouvido.
+        const dragState = {
             initialMouseX: e.screenX,
             initialMouseY: e.screenY,
-            initialWindowX: initialPosition.x,
-            initialWindowY: initialPosition.y,
+            initialWindowX: null,
+            initialWindowY: null,
             moved: false,
         };
+        this.dragState = dragState;
 
         window.addEventListener('mousemove', this.handleMouseMove, { capture: true });
-        window.addEventListener('mouseup', this.handleMouseUp, { once: true, capture: true });
+        window.addEventListener('mouseup', this.handleMouseUp, { capture: true });
+
+        const initialPosition = await window.api.mainHeader.getHeaderPosition();
+
+        // O arrasto já terminou (ou outro começou) enquanto esperávamos.
+        if (this.dragState !== dragState) return;
+
+        dragState.initialWindowX = initialPosition.x;
+        dragState.initialWindowY = initialPosition.y;
     }
 
     handleMouseMove(e) {
         if (!this.dragState) return;
+
+        // Nenhum botão pressionado: o mouseup se perdeu (solto fora da janela).
+        // Sem isso a janela ficaria grudada no cursor para sempre.
+        if (e.buttons === 0) {
+            this.handleMouseUp(e);
+            return;
+        }
+
+        // A posição inicial da janela ainda não chegou do processo principal.
+        if (this.dragState.initialWindowX === null) return;
 
         const deltaX = Math.abs(e.screenX - this.dragState.initialMouseX);
         const deltaY = Math.abs(e.screenY - this.dragState.initialMouseY);
@@ -467,6 +486,7 @@ export class MainHeader extends LitElement {
         const wasDragged = this.dragState.moved;
 
         window.removeEventListener('mousemove', this.handleMouseMove, { capture: true });
+        window.removeEventListener('mouseup', this.handleMouseUp, { capture: true });
         this.dragState = null;
 
         if (wasDragged) {
