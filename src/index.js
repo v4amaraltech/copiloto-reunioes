@@ -57,7 +57,7 @@ try {
 }
 const { createWindows } = require('./window/windowManager.js');
 const listenService = require('./features/listen/listenService');
-// Firebase removido: fork opera em modo local (auth futura via Supabase — ver docs/plano-copiloto-reunioes.md)
+// Firebase removido: fork opera em modo local (login dos closers via Appwrite — ver docs/plano-copiloto-reunioes.md)
 const databaseInitializer = require('./features/common/services/databaseInitializer');
 const authService = require('./features/common/services/authService');
 const path = require('node:path');

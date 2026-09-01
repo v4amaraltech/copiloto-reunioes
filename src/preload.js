@@ -212,7 +212,7 @@ contextBridge.exposeInMainWorld('api', {
     getCurrentUser: () => ipcRenderer.invoke('get-current-user'),
     openPersonalizePage: () => ipcRenderer.invoke('open-personalize-page'),
 
-    // V4 Auth (Supabase) - login dos closers
+    // V4 Auth (Appwrite) - login dos closers
     v4Login: (email, password) => ipcRenderer.invoke('v4auth:login', { email, password }),
     v4Logout: () => ipcRenderer.invoke('v4auth:logout'),
     v4GetState: () => ipcRenderer.invoke('v4auth:getState'),
