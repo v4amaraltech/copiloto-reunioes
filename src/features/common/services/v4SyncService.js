@@ -1,14 +1,18 @@
-// Sincronização pós-call com o Supabase (Enriquece AI) — Sprint 2.2.
-// Ao fim de cada sessão de escuta, envia a transcrição completa (lida do SQLite)
-// para a edge function save-transcript. Falhou (sem rede, token expirado etc.)?
+// Sincronização pós-call com o Appwrite self-hosted (passos 3+4 da migração).
+// Ao fim de cada sessão de escuta, grava a sessão + transcrição completa (lidas
+// do SQLite) direto nas collections `sessions` e `transcripts`, com permissions
+// por documento do closer logado. Falhou (sem rede, sessão expirada etc.)?
 // A sessão entra numa fila local em disco e é reenviada no próximo boot.
+//
+// Os documentos usam o id local (UUID) como documentId — retry é idempotente:
+// 409 na sessão vira update, 409 em transcript significa "já subiu".
+// Nota: os textos sobem em claro por ora (paridade com o save-transcript do
+// Supabase); criptografia por campo entra quando os repositories migrarem.
 
 const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
-const { V4_SUPABASE_URL } = require('../config/v4Config');
-
-const SAVE_TRANSCRIPT_URL = `${V4_SUPABASE_URL}/functions/v1/save-transcript`;
+const { DATABASE_ID, getDatabasesInstance, Permission, Role } = require('./appwriteClient');
 
 class V4SyncService {
     constructor() {
@@ -51,29 +55,33 @@ class V4SyncService {
         this._writeQueue(this._readQueue().filter(id => id !== sessionId));
     }
 
-    _buildPayload(sessionId) {
-        const sessionRepository = require('../repositories/session');
-        const sttRepository = require('../../listen/stt/repositories');
-        const session = sessionRepository.getById ? sessionRepository.getById(sessionId) : null;
-        const transcripts = sttRepository.getAllTranscriptsBySessionId(sessionId) || [];
+    /** Remove chaves null/undefined (attributes opcionais ficam de fora do doc). */
+    _compact(data) {
+        return Object.fromEntries(Object.entries(data).filter(([, v]) => v !== null && v !== undefined));
+    }
 
-        const toIso = epochSeconds => (epochSeconds ? new Date(epochSeconds * 1000).toISOString() : null);
-
-        return {
-            local_session_id: sessionId,
-            started_at: toIso(session?.started_at),
-            ended_at: toIso(session?.ended_at) || new Date().toISOString(),
-            transcripts: transcripts.map((t, i) => ({
-                seq: i,
-                speaker: t.speaker,
-                text: t.text,
-                spoken_at: toIso(t.start_at),
-            })),
-        };
+    async _createOrUpdate(databases, collectionId, documentId, data, permissions) {
+        try {
+            await databases.createDocument({
+                databaseId: DATABASE_ID, collectionId, documentId, data, permissions,
+            });
+            return 'created';
+        } catch (err) {
+            if (err?.code === 409) {
+                if (collectionId === 'sessions') {
+                    await databases.updateDocument({
+                        databaseId: DATABASE_ID, collectionId, documentId, data,
+                    });
+                    return 'updated';
+                }
+                return 'exists'; // transcript já subiu num retry anterior
+            }
+            throw err;
+        }
     }
 
     /**
-     * Envia a sessão para o Supabase. skipQueueOnFail=true evita re-enfileirar
+     * Envia a sessão para o Appwrite. skipQueueOnFail=true evita re-enfileirar
      * quando já estamos processando a própria fila.
      */
     async uploadSession(sessionId, { skipQueueOnFail = false } = {}) {
@@ -81,35 +89,58 @@ class V4SyncService {
 
         try {
             const v4AuthService = require('./v4AuthService');
-            const token = await v4AuthService.getAccessToken();
-            if (!token) {
+            const uid = await v4AuthService.getUserId();
+            if (!uid) {
                 throw new Error('sem sessão V4 (login necessário)');
             }
 
-            const payload = this._buildPayload(sessionId);
-            if (payload.transcripts.length === 0) {
+            const sessionRepository = require('../repositories/session');
+            const sttRepository = require('../../listen/stt/repositories');
+            const session = sessionRepository.getById ? await sessionRepository.getById(sessionId) : null;
+            const transcripts = (await sttRepository.getAllTranscriptsBySessionId(sessionId)) || [];
+
+            if (transcripts.length === 0) {
                 console.log(`[V4Sync] Session ${sessionId} sem transcrição — nada a enviar`);
                 this._dequeue(sessionId);
                 return { success: true, skipped: true };
             }
 
-            const resp = await fetch(SAVE_TRANSCRIPT_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(payload),
-            });
+            const databases = getDatabasesInstance();
+            const now = Math.floor(Date.now() / 1000);
+            const perms = [
+                Permission.read(Role.user(uid)),
+                Permission.update(Role.user(uid)),
+                Permission.delete(Role.user(uid)),
+            ];
 
-            const result = await resp.json().catch(() => ({}));
-            if (!resp.ok || !result.success) {
-                throw new Error(result.error || `HTTP ${resp.status}`);
+            await this._createOrUpdate(databases, 'sessions', sessionId, this._compact({
+                uid,
+                title: session?.title || 'Sessão de escuta',
+                session_type: session?.session_type || 'listen',
+                started_at: session?.started_at,
+                ended_at: session?.ended_at || now,
+                updated_at: now,
+            }), perms);
+
+            let sent = 0;
+            for (const t of transcripts) {
+                await this._createOrUpdate(databases, 'transcripts', t.id, this._compact({
+                    uid,
+                    session_id: sessionId,
+                    start_at: t.start_at,
+                    end_at: t.end_at,
+                    speaker: t.speaker,
+                    text: t.text,
+                    lang: t.lang,
+                    created_at: t.created_at,
+                    updated_at: now,
+                }), perms);
+                sent++;
             }
 
             this._dequeue(sessionId);
-            console.log(`[V4Sync] ✅ Transcrição enviada ao Supabase: ${result.turns} turnos (call ${result.call_session_id})`);
-            return { success: true, call_session_id: result.call_session_id };
+            console.log(`[V4Sync] ✅ Transcrição enviada ao Appwrite: ${sent} turnos (session ${sessionId})`);
+            return { success: true, turns: sent };
         } catch (err) {
             console.error(`[V4Sync] Falha ao enviar session ${sessionId}:`, err.message);
             if (!skipQueueOnFail) this._enqueue(sessionId);

@@ -248,7 +248,7 @@ class ListenService {
                 await sessionRepository.end(endedSessionId);
                 console.log(`[DB] Session ${endedSessionId} ended.`);
 
-                // Envio pós-call ao Supabase (assíncrono; falha entra na fila de retry)
+                // Envio pós-call ao Appwrite (assíncrono; falha entra na fila de retry)
                 const v4SyncService = require('../common/services/v4SyncService');
                 v4SyncService.uploadSession(endedSessionId).catch(err =>
                     console.error('[ListenService] Post-call sync error:', err.message)
