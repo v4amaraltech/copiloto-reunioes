@@ -1,10 +1,10 @@
 // Autenticação dos closers via Supabase Auth (Enriquece AI), com tokens no
 // Keychain do macOS (keytar). Independente do authService local do Glass:
 // os repositórios continuam em modo 'local'/SQLite — este serviço só governa
-// a identidade V4 usada pelo proxy-llm (e, no Sprint 2, briefing/transcrição).
+// a identidade V4 usada pelo envio de transcrição (save-transcript).
 
 const keytar = require('keytar');
-const { V4_SUPABASE_URL, V4_SUPABASE_ANON_KEY, V4_PROXY_KEY_PLACEHOLDER } = require('../config/v4Config');
+const { V4_SUPABASE_URL, V4_SUPABASE_ANON_KEY } = require('../config/v4Config');
 
 const KEYCHAIN_SERVICE = 'com.v4amaral.copiloto';
 const KEYCHAIN_ACCOUNT = 'v4-session';
@@ -74,7 +74,6 @@ class V4AuthService {
             const json = await this._authRequest('password', { email: (email || '').trim(), password });
             this.session = this._sessionFromResponse(json);
             await this._persist();
-            await this._activateProxyLlm();
             console.log(`[V4Auth] Logged in as ${this.session.email}`);
             return { success: true, email: this.session.email };
         } catch (err) {
@@ -122,19 +121,6 @@ class V4AuthService {
         };
     }
 
-    /**
-     * Após o login, registra o provider Anthropic com o placeholder de proxy
-     * para a auto-seleção de modelos apontar o LLM para o claude via proxy-llm.
-     */
-    async _activateProxyLlm() {
-        try {
-            if (global.modelStateService) {
-                await global.modelStateService.setApiKey('anthropic', V4_PROXY_KEY_PLACEHOLDER);
-            }
-        } catch (err) {
-            console.warn('[V4Auth] Could not auto-activate Anthropic via proxy:', err.message);
-        }
-    }
 }
 
 const v4AuthService = new V4AuthService();

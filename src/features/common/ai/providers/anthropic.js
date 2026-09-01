@@ -1,12 +1,7 @@
 const { Anthropic } = require("@anthropic-ai/sdk")
-const { V4_LLM_PROXY_URL, V4_PROXY_KEY_PLACEHOLDER } = require('../../config/v4Config')
 
 class AnthropicProvider {
     static async validateApiKey(key) {
-        // Modo proxy V4: a credencial real é o JWT do closer, validado pela edge function.
-        if (key === V4_PROXY_KEY_PLACEHOLDER) {
-            return { success: true };
-        }
         if (!key || typeof key !== 'string' || !key.startsWith('sk-ant-')) {
             return { success: false, error: 'Invalid Anthropic API key format.' };
         }
@@ -73,18 +68,7 @@ async function createSTT({ apiKey, language = "en", callbacks = {}, ...config })
  * @param {number} [opts.maxTokens=4096] - Max tokens
  * @returns {object} LLM instance
  */
-// Proxy da V4 (edge function Supabase): quando a "key" armazenada é o placeholder,
-// o client é montado por chamada com o JWT vivo do closer (renovado pelo v4AuthService)
-// e aponta para o proxy — a key real da Anthropic vive só na edge function.
 async function resolveClient(apiKey) {
-  if (apiKey === V4_PROXY_KEY_PLACEHOLDER) {
-    const v4AuthService = require('../../services/v4AuthService');
-    const token = await v4AuthService.getAccessToken();
-    if (!token) {
-      throw new Error('Sessão V4 expirada. Faça login novamente nas Configurações.');
-    }
-    return new Anthropic({ baseURL: V4_LLM_PROXY_URL, apiKey: null, authToken: token });
-  }
   return new Anthropic({ apiKey });
 }
 
@@ -283,7 +267,7 @@ function createStreamingLLM({
             let totalContent = ""
 
             // Stream the response.
-            // O system prompt (identidade + playbook + briefing) é estável durante a
+            // O system prompt (identidade + playbook) é estável durante a
             // call inteira — cache_control corta ~90% do custo dele e reduz o TTFT.
             const stream = await client.messages.create({
               model: model,

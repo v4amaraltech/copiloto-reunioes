@@ -92,8 +92,21 @@ class ModelStateService extends EventEmitter {
         } catch (error) {
             console.error('[ModelStateService] electron-store migration failed:', error);
         }
+
+        // Migração: instalações antigas guardam o placeholder 'v4-proxy' como key
+        // da Anthropic (era o proxy-llm, removido). Sem esta limpeza a key inválida
+        // travaria a seleção de modelo — apagando, o usuário cai no ApiKeyHeader.
+        try {
+            const anthropicSettings = await providerSettingsRepository.getByProvider('anthropic');
+            if (anthropicSettings?.api_key === 'v4-proxy') {
+                await providerSettingsRepository.upsert('anthropic', { ...anthropicSettings, api_key: null });
+                console.log('[ModelStateService] Removed legacy v4-proxy placeholder from anthropic settings.');
+            }
+        } catch (error) {
+            console.error('[ModelStateService] v4-proxy cleanup failed:', error);
+        }
     }
-    
+
     setupLocalAIStateSync() {
         const localAIManager = require('./localAIManager');
         localAIManager.on('state-changed', (service, status) => {
