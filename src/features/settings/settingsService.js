@@ -343,15 +343,38 @@ async function createPreset(title, prompt) {
 async function updatePreset(id, title, prompt) {
     try {
         // The adapter injects the UID.
+        const all = await settingsRepository.getPresets();
+        const target = (all || []).find(p => p.id === id);
+
+        // Editar um playbook de fábrica não é bloqueado: ele é "adotado" — vira um
+        // agente do usuário, com id novo, e o original é recriado logo em seguida.
+        if (target && target.is_default === 1) {
+            const { id: newId } = await settingsRepository.adoptDefaultPreset(id, { title, prompt });
+
+            // Se o playbook adotado era o agente ativo, a versão do usuário assume.
+            if (getActivePresetId() === id) {
+                await setActivePreset(newId);
+            }
+
+            windowNotificationManager.notifyRelevantWindows('presets-updated', {
+                action: 'adopted',
+                presetId: newId,
+                fromDefaultId: id,
+                title
+            });
+
+            return { success: true, id: newId, adopted: true };
+        }
+
         await settingsRepository.updatePreset(id, { title, prompt });
-        
+
         windowNotificationManager.notifyRelevantWindows('presets-updated', {
             action: 'updated',
             presetId: id,
             title
         });
-        
-        return { success: true };
+
+        return { success: true, id };
     } catch (error) {
         console.error('[SettingsService] Error updating preset:', error);
         return { success: false, error: error.message };

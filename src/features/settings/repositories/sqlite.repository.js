@@ -52,21 +52,53 @@ function createPreset({ uid, title, prompt }) {
 
 function updatePreset(id, { title, prompt }, uid) {
     const db = sqliteClient.getDb();
-    const now = Math.floor(Date.now() / 1000);
+    // prompt_presets não tem coluna updated_at (ver config/schema.js); citá-la aqui
+    // fazia todo salvamento estourar com "no such column".
     const query = `
-        UPDATE prompt_presets 
-        SET title = ?, prompt = ?, sync_state = 'dirty', updated_at = ?
+        UPDATE prompt_presets
+        SET title = ?, prompt = ?, sync_state = 'dirty'
         WHERE id = ? AND uid = ? AND is_default = 0
     `;
-    
+
     try {
-        const result = db.prepare(query).run(title, prompt, now, id, uid);
+        const result = db.prepare(query).run(title, prompt, id, uid);
         if (result.changes === 0) {
             throw new Error('Preset not found, is default, or permission denied');
         }
         return { changes: result.changes };
     } catch (err) {
         console.error('SQLite: Failed to update preset:', err);
+        throw err;
+    }
+}
+
+/**
+ * "Adota" um playbook de fábrica: o registro editado recebe um id novo, passa a
+ * pertencer ao usuário (is_default = 0) e sai da ressincronização do boot.
+ * O id fixo fica livre, então o playbook original é recriado em seguida — o
+ * usuário fica com a sua versão sem perder o texto de fábrica.
+ */
+function adoptDefaultPreset(id, { title, prompt }, uid) {
+    const db = sqliteClient.getDb();
+    const newId = require('crypto').randomUUID();
+    const query = `
+        UPDATE prompt_presets
+        SET id = ?, uid = ?, title = ?, prompt = ?, is_default = 0, sync_state = 'dirty'
+        WHERE id = ? AND is_default = 1
+    `;
+
+    try {
+        const adopt = db.transaction(() => {
+            const result = db.prepare(query).run(newId, uid, title, prompt, id);
+            if (result.changes === 0) {
+                throw new Error('Default preset not found');
+            }
+            sqliteClient.ensureDefaultAgents();
+        });
+        adopt();
+        return { id: newId };
+    } catch (err) {
+        console.error('SQLite: Failed to adopt default preset:', err);
         throw err;
     }
 }
@@ -140,6 +172,7 @@ module.exports = {
     getPresetTemplates,
     createPreset,
     updatePreset,
+    adoptDefaultPreset,
     deletePreset,
     getAutoUpdate,
     setAutoUpdate

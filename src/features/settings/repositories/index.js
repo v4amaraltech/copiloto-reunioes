@@ -26,6 +26,11 @@ const settingsRepositoryAdapter = {
         return getBaseRepository().updatePreset(id, options, uid);
     },
 
+    adoptDefaultPreset: (id, options) => {
+        const uid = authService.getCurrentUserId();
+        return getBaseRepository().adoptDefaultPreset(id, options, uid);
+    },
+
     deletePreset: (id) => {
         const uid = authService.getCurrentUserId();
         return getBaseRepository().deletePreset(id, uid);

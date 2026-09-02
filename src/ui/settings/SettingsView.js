@@ -508,6 +508,186 @@ export class SettingsView extends LitElement {
             color: rgba(238, 27, 46, 1);
         }
 
+        /* ── Ações visíveis em cada agente da lista ── */
+        .preset-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            margin-left: 4px;
+        }
+
+        .preset-action {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.88);
+            font-size: 11.5px;
+            font-weight: 500;
+            padding: 5px 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+
+        .preset-action:hover {
+            background: rgba(255, 255, 255, 0.17);
+            border-color: rgba(255, 255, 255, 0.28);
+        }
+
+        .preset-action.danger:hover {
+            background: rgba(238, 27, 46, 0.32);
+            border-color: rgba(238, 27, 46, 0.7);
+        }
+
+        .preset-action svg {
+            width: 13px;
+            height: 13px;
+            flex-shrink: 0;
+        }
+
+        .preset-item.confirming {
+            background: rgba(238, 27, 46, 0.12);
+            border-color: rgba(238, 27, 46, 0.55);
+            cursor: default;
+        }
+
+        .confirm-text {
+            flex: 1;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* ── Editor de agente (mesma janela, no lugar da lista) ── */
+        .agent-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .agent-editor-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .agent-back {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 9px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 6px 11px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .agent-back:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .agent-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .agent-field.grow {
+            flex: 1;
+            min-height: 160px;
+        }
+
+        .agent-field-label {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 2px;
+        }
+
+        .agent-input,
+        .agent-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            padding: 9px 11px;
+            outline: none;
+            font-family: inherit;
+            cursor: text;
+            user-select: text;
+        }
+
+        .agent-textarea {
+            flex: 1;
+            min-height: 150px;
+            line-height: 1.5;
+            resize: none;
+        }
+
+        .agent-input:focus,
+        .agent-textarea:focus {
+            border-color: rgba(238, 27, 46, 0.75);
+        }
+
+        .agent-input:disabled,
+        .agent-textarea:disabled {
+            opacity: 0.55;
+        }
+
+        .agent-editor-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-top: 4px;
+        }
+
+        .agent-counter {
+            flex: 1;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .agent-dirty {
+            color: #ffc107;
+        }
+
+        .agent-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .agent-banner span {
+            flex: 1;
+        }
+
+        .agent-banner.warn {
+            background: rgba(255, 193, 7, 0.16);
+            color: #ffdd7a;
+        }
+
+        .agent-banner.error {
+            background: rgba(238, 27, 46, 0.2);
+            color: #ff9d9d;
+        }
+
         .loading-state {
             display: flex;
             align-items: center;
@@ -660,6 +840,18 @@ export class SettingsView extends LitElement {
         presets: { type: Array, state: true },
         selectedPreset: { type: Object, state: true },
         showPresets: { type: Boolean, state: true },
+        // Editor de agentes (aba 'Agentes', mesma janela)
+        agentsMode: { type: String, state: true },
+        agentDraftId: { type: String, state: true },
+        agentDraftTitle: { type: String, state: true },
+        agentDraftPrompt: { type: String, state: true },
+        agentDraftIsDefault: { type: Boolean, state: true },
+        agentDirty: { type: Boolean, state: true },
+        agentSaving: { type: Boolean, state: true },
+        agentError: { type: String, state: true },
+        agentStatus: { type: String, state: true },
+        agentPendingDeleteId: { type: String, state: true },
+        agentConfirmDiscard: { type: Boolean, state: true },
         autoUpdateEnabled: { type: Boolean, state: true },
         autoUpdateLoading: { type: Boolean, state: true },
         // Ollama related properties
@@ -690,6 +882,17 @@ export class SettingsView extends LitElement {
         this.selectedPreset = null;
         this.showPresets = false;
         this.activeTab = 'agentes';
+        this.agentsMode = 'list';
+        this.agentDraftId = null;
+        this.agentDraftTitle = '';
+        this.agentDraftPrompt = '';
+        this.agentDraftIsDefault = false;
+        this.agentDirty = false;
+        this.agentSaving = false;
+        this.agentError = '';
+        this.agentStatus = '';
+        this.agentPendingDeleteId = null;
+        this.agentConfirmDiscard = false;
         // Ollama related
         this.ollamaStatus = { installed: false, running: false };
         this.ollamaModels = [];
@@ -1231,6 +1434,9 @@ export class SettingsView extends LitElement {
     }
 
     handleMouseLeave = () => {
+        // Com o editor de agentes aberto o texto está sendo escrito: sumir a
+        // janela ao tirar o mouse faria o usuário perder o que digitou de vista.
+        if (this.activeTab === 'agentes' && this.agentsMode === 'editor') return;
         window.api.settingsView.hideSettingsWindow();
     }
 
@@ -1288,6 +1494,141 @@ export class SettingsView extends LitElement {
     handleMoveRight() {
         console.log('Move Right clicked');
         window.api.settingsView.moveWindowStep('right');
+    }
+
+    // ── Editor de agentes: vive na aba 'Agentes', sem abrir outra janela ──
+
+    /** Abre o editor no lugar da lista. `preset` nulo cria um agente novo. */
+    openAgentEditor(preset) {
+        const isDefault = preset ? preset.is_default === 1 : false;
+        this.agentDraftId = preset ? preset.id : null;
+        // Ao editar um playbook de fábrica, o nome já vem sugerido: o original
+        // continua na lista e dois itens com o mesmo nome confundiriam. O usuário
+        // vê a sugestão antes de salvar e pode trocá-la.
+        this.agentDraftTitle = preset ? (isDefault ? `${preset.title} (minha versão)` : preset.title) : '';
+        this.agentDraftPrompt = preset ? (preset.prompt || '') : '';
+        this.agentDraftIsDefault = isDefault;
+        this.agentDirty = isDefault;
+        this.agentError = '';
+        this.agentStatus = '';
+        this.agentConfirmDiscard = false;
+        this.agentPendingDeleteId = null;
+        this.agentsMode = 'editor';
+        this.requestUpdate();
+    }
+
+    /** Volta para a lista. Com rascunho pendente, pede confirmação antes. */
+    backToAgentList(force = false) {
+        if (this.agentDirty && !force) {
+            this.agentConfirmDiscard = true;
+            this.requestUpdate();
+            return;
+        }
+        this.agentsMode = 'list';
+        this.agentDirty = false;
+        this.agentConfirmDiscard = false;
+        this.agentError = '';
+        this.agentStatus = '';
+        this.refreshPresets();
+    }
+
+    async refreshPresets() {
+        try {
+            const presets = await window.api.settingsView.getPresets();
+            this.presets = presets || [];
+            this.selectedPreset = this.presets.find(p => p.is_active === 1) || null;
+        } catch (error) {
+            console.error('[SettingsView] Failed to refresh presets:', error);
+        }
+        this.requestUpdate();
+    }
+
+    async handleAgentSave() {
+        if (this.agentSaving) return;
+
+        const title = (this.agentDraftTitle || '').trim();
+        if (!title) {
+            this.agentError = 'Dê um nome ao agente antes de salvar.';
+            this.requestUpdate();
+            return;
+        }
+
+        this.agentSaving = true;
+        this.agentError = '';
+        this.requestUpdate();
+        try {
+            let result;
+            if (this.agentDraftId) {
+                result = await window.api.settingsView.updatePreset(this.agentDraftId, title, this.agentDraftPrompt);
+            } else {
+                result = await window.api.settingsView.createPreset(title, this.agentDraftPrompt);
+                if (result && result.success !== false && result.id) this.agentDraftId = result.id;
+            }
+
+            if (result && result.success === false) {
+                this.agentError = result.error || 'Não foi possível salvar o agente.';
+                return;
+            }
+
+            // Editar um playbook de fábrica o "adota": o agente salvo é do usuário,
+            // com id novo, e daqui em diante é uma edição comum.
+            const wasDefault = this.agentDraftIsDefault;
+            if (result && result.adopted && result.id) {
+                this.agentDraftId = result.id;
+                this.agentDraftIsDefault = false;
+            }
+
+            this.agentDirty = false;
+            this.agentStatus = wasDefault ? 'salvo como seu agente' : 'salvo';
+            await this.refreshPresets();
+        } catch (error) {
+            console.error('[SettingsView] Failed to save agent:', error);
+            this.agentError = 'Não foi possível salvar o agente.';
+        } finally {
+            this.agentSaving = false;
+            this.requestUpdate();
+        }
+    }
+
+    async handleAgentDuplicate(preset) {
+        this.agentSaving = true;
+        this.agentError = '';
+        this.requestUpdate();
+        try {
+            const result = await window.api.settingsView.createPreset(`${preset.title} (cópia)`, preset.prompt || '');
+            if (result && result.success === false) {
+                this.agentError = result.error || 'Não foi possível duplicar o agente.';
+                return;
+            }
+            await this.refreshPresets();
+            const created = this.presets.find(p => p.id === result.id);
+            if (created) this.openAgentEditor(created);
+        } catch (error) {
+            console.error('[SettingsView] Failed to duplicate agent:', error);
+            this.agentError = 'Não foi possível duplicar o agente.';
+        } finally {
+            this.agentSaving = false;
+            this.requestUpdate();
+        }
+    }
+
+    async handleAgentDelete(preset) {
+        this.agentPendingDeleteId = null;
+        try {
+            const wasActive = preset.is_active === 1;
+            const result = await window.api.settingsView.deletePreset(preset.id);
+            if (result && result.success === false) {
+                this.agentError = result.error || 'Não foi possível excluir o agente.';
+                this.requestUpdate();
+                return;
+            }
+            if (wasActive) await window.api.settingsView.setActivePreset(null);
+            await this.refreshPresets();
+        } catch (error) {
+            console.error('[SettingsView] Failed to delete agent:', error);
+            this.agentError = 'Não foi possível excluir o agente.';
+            this.requestUpdate();
+        }
     }
 
     async handlePersonalize() {
@@ -1560,35 +1901,159 @@ export class SettingsView extends LitElement {
             { id: 'geral', label: 'Geral', icon: icon(svg`<path d="M4 8h9M17.5 8H20M4 16h2.5M11 16h9"/><circle cx="15" cy="8" r="2.2"/><circle cx="8.5" cy="16" r="2.2"/>`) },
         ];
 
-        const agentesPane = html`
+        const pencilIcon = icon(svg`<path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3z"/><path d="M13.5 6.5l4 4"/>`);
+        const copyIcon = icon(svg`<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>`);
+        const trashIcon = icon(svg`<path d="M4 7h16M10 7V5h4v2M6 7l1 13h10l1-13"/>`);
+        const backIcon = icon(svg`<path d="M14.5 5.5L8 12l6.5 6.5"/>`);
+
+        const agentRow = (preset) => {
+            const isDefault = preset.is_default === 1;
+            const isActive = preset.is_active === 1;
+
+            if (this.agentPendingDeleteId === preset.id) {
+                return html`
+                    <div class="preset-item confirming">
+                        <span class="confirm-text">Excluir "${preset.title}"?</span>
+                        <div class="preset-actions">
+                            <button class="preset-action danger" @click=${() => this.handleAgentDelete(preset)}>
+                                Excluir
+                            </button>
+                            <button class="preset-action" @click=${() => { this.agentPendingDeleteId = null; this.requestUpdate(); }}>
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return html`
+                <div class="preset-item ${isActive ? 'selected' : ''}"
+                     @click=${() => this.handlePresetSelect(preset)}>
+                    <span class="preset-check">${isActive ? '✓' : ''}</span>
+                    <span class="preset-name">${preset.title}</span>
+                    ${isActive ? html`<span class="preset-status">Ativo</span>` : ''}
+                    <div class="preset-actions" @click=${e => e.stopPropagation()}>
+                        <button class="preset-action" title="Editar este agente"
+                                @click=${() => this.openAgentEditor(preset)}>
+                            ${pencilIcon} Editar
+                        </button>
+                        <button class="preset-action" title="Duplicar"
+                                @click=${() => this.handleAgentDuplicate(preset)}>
+                            ${copyIcon}
+                        </button>
+                        ${isDefault ? '' : html`
+                            <button class="preset-action danger" title="Excluir"
+                                    @click=${() => { this.agentPendingDeleteId = preset.id; this.requestUpdate(); }}>
+                                ${trashIcon}
+                            </button>
+                        `}
+                    </div>
+                </div>
+            `;
+        };
+
+        const agentsListPane = html`
             <h2 class="content-title">Agentes</h2>
             <p class="content-hint">
                 O agente ativo guia as sugestões ao vivo durante a call.
-                Clique para ativar; clique no ativo para voltar ao playbook padrão (Closer).
+                Clique no nome para ativar; clique no ativo para voltar ao playbook padrão (Closer).
             </p>
+            ${this.agentError ? html`
+                <div class="agent-banner error"><span>${this.agentError}</span></div>
+            ` : ''}
             <div class="preset-list">
                 ${this.presets.length === 0 ? html`
                     <div class="no-presets-message">
                         Nenhum agente ainda.<br>
-                        <span class="web-link" @click=${this.handlePersonalize}>
+                        <span class="web-link" @click=${() => this.openAgentEditor(null)}>
                             Criar seu primeiro agente
                         </span>
                     </div>
-                ` : this.presets.map(preset => html`
-                    <div class="preset-item ${preset.is_active === 1 ? 'selected' : ''}"
-                         @click=${() => this.handlePresetSelect(preset)}>
-                        <span class="preset-check">${preset.is_active === 1 ? '✓' : ''}</span>
-                        <span class="preset-name">${preset.title}</span>
-                        ${preset.is_active === 1 ? html`<span class="preset-status">Ativo</span>` : ''}
-                    </div>
-                `)}
+                ` : this.presets.map(preset => agentRow(preset))}
             </div>
             <div class="buttons-section">
-                <button class="settings-button primary full-width" @click=${this.handlePersonalize}>
-                    <span>Criar / editar agentes</span>
+                <button class="settings-button primary full-width" @click=${() => this.openAgentEditor(null)}>
+                    <span>+ Novo agente</span>
+                </button>
+                <button class="settings-button full-width" @click=${this.handlePersonalize}>
+                    <span>Abrir no navegador</span>
                 </button>
             </div>
         `;
+
+        const agentChars = (this.agentDraftPrompt || '').length;
+        const agentsEditorPane = html`
+            <div class="agent-editor-head">
+                <button class="agent-back" @click=${() => this.backToAgentList()}>
+                    ${backIcon} Voltar
+                </button>
+                <h2 class="content-title" style="margin:0;">
+                    ${this.agentDraftId ? 'Editar agente' : 'Novo agente'}
+                </h2>
+            </div>
+
+            ${this.agentConfirmDiscard ? html`
+                <div class="agent-banner warn">
+                    <span>Descartar as alterações não salvas?</span>
+                    <button class="preset-action danger" @click=${() => this.backToAgentList(true)}>Descartar</button>
+                    <button class="preset-action" @click=${() => { this.agentConfirmDiscard = false; this.requestUpdate(); }}>Continuar editando</button>
+                </div>
+            ` : ''}
+
+            ${this.agentError ? html`
+                <div class="agent-banner error"><span>${this.agentError}</span></div>
+            ` : ''}
+
+            ${this.agentDraftIsDefault ? html`
+                <div class="agent-banner warn">
+                    <span>
+                        Este é um playbook de fábrica. Ao salvar, esta vira a <strong>sua versão</strong>
+                        e o playbook original continua na lista, com o texto de fábrica.
+                    </span>
+                </div>
+            ` : ''}
+
+            <div class="agent-field">
+                <span class="agent-field-label">Nome</span>
+                <input
+                    class="agent-input"
+                    type="text"
+                    .value=${this.agentDraftTitle}
+                    placeholder="Ex.: Pré-venda — Ligação"
+                    @input=${e => { this.agentDraftTitle = e.target.value; this.agentDirty = true; this.agentStatus = ''; this.requestUpdate(); }}
+                />
+            </div>
+
+            <div class="agent-field grow">
+                <span class="agent-field-label">Instruções</span>
+                <textarea
+                    class="agent-textarea"
+                    .value=${this.agentDraftPrompt}
+                    placeholder="Descreva como este agente deve orientar as sugestões durante a conversa..."
+                    @input=${e => { this.agentDraftPrompt = e.target.value; this.agentDirty = true; this.agentStatus = ''; this.requestUpdate(); }}
+                ></textarea>
+            </div>
+
+            <div class="agent-editor-footer">
+                <span class="agent-counter">
+                    ${agentChars.toLocaleString('pt-BR')} caracteres
+                    ${this.agentDirty ? html`<span class="agent-dirty">· não salvo</span>` : ''}
+                    ${this.agentStatus ? html`· ${this.agentStatus}` : ''}
+                </span>
+                <button class="preset-action" title="Editar a versão completa no navegador" @click=${this.handlePersonalize}>
+                    Abrir no navegador
+                </button>
+                <button
+                    class="settings-button primary"
+                    ?disabled=${this.agentSaving || !this.agentDirty}
+                    @click=${() => this.handleAgentSave()}
+                >
+                    <span>${this.agentSaving ? 'Salvando...' : (this.agentDraftIsDefault ? 'Salvar minha versão' : 'Salvar')}</span>
+                </button>
+            </div>
+        `;
+
+        const agentesPane = this.agentsMode === 'editor' ? agentsEditorPane : agentsListPane;
 
         const contaPane = html`
             <h2 class="content-title">Conta</h2>

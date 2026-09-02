@@ -100,9 +100,14 @@ class WindowLayoutManager {
         const centerX = currentBounds.x + currentBounds.width / 2;
         const newX = Math.round(centerX - width / 2);
         const display = getCurrentDisplay(header);
-        const { x: workAreaX, width: workAreaWidth } = display.workArea;
+        const { x: workAreaX, y: workAreaY, width: workAreaWidth, height: workAreaHeight } = display.workArea;
         const clampedX = Math.max(workAreaX, Math.min(workAreaX + workAreaWidth - width, newX));
-        return { x: clampedX, y: currentBounds.y, width, height };
+        // A altura muda entre as telas do header (47px no main, 560px em agentes):
+        // sem clampar Y, uma janela colada no rodapé cresce para fora da tela e
+        // aparece cortada. Se não couber para baixo, sobe; se for mais alta que a
+        // área útil, encosta no topo.
+        const clampedY = Math.max(workAreaY, Math.min(workAreaY + workAreaHeight - height, currentBounds.y));
+        return { x: clampedX, y: clampedY, width, height };
     }
     
     calculateClampedPosition(header, { x: newX, y: newY }) {

@@ -220,6 +220,19 @@ class SQLiteClient {
 
         this.db.prepare(initUserQuery).run(this.defaultUserId, 'Default User', 'contact@pickle.com', now);
 
+        this.ensureDefaultAgents();
+
+        console.log('Default data initialized.');
+    }
+
+    /**
+     * Garante que os playbooks de fábrica existam e estejam com o texto do código.
+     * Roda no boot e também depois que o usuário "adota" um padrão (o preset editado
+     * muda de id e deixa de ser padrão, liberando o id fixo para o original voltar).
+     */
+    ensureDefaultAgents() {
+        const now = Math.floor(Date.now() / 1000);
+
         // Agentes padrão do Copiloto V4 (substituem os presets em inglês herdados do Glass).
         const legacyGlassPresetIds = ['school', 'meetings', 'sales', 'recruiting', 'customer-support'];
         this.db.prepare(
@@ -255,15 +268,14 @@ REGRAS:
             INSERT OR IGNORE INTO prompt_presets (id, uid, title, prompt, is_default, created_at)
             VALUES (?, ?, ?, ?, 1, ?)
         `);
-        // Agentes padrão são read-only na UI; manter o texto sincronizado com o código a cada boot.
+        // Só reescreve o que ainda é padrão. A versão que o usuário adotou tem outro
+        // id e is_default = 0, então nunca é sobrescrita por esta ressincronização.
         const refreshAgent = this.db.prepare(`UPDATE prompt_presets SET title = ?, prompt = ? WHERE id = ? AND is_default = 1`);
 
         for (const [id, title, promptText] of defaultAgents) {
             insertAgent.run(id, this.defaultUserId, title, promptText, now);
             refreshAgent.run(title, promptText, id);
         }
-
-        console.log('Default data initialized.');
     }
 
     close() {
