@@ -6,9 +6,16 @@ const modelStateService = require('../../common/services/modelStateService');
 // Canal "Me" (closer) mantém debounce longo; canal "Them" (lead) usa debounce curto
 // porque é ele quem dispara a sugestão — cada ms aqui entra na latência fala→sugestão.
 const MY_COMPLETION_DEBOUNCE_MS = 2000;
-// 1500ms: pausa de respiração/pensamento do lead não pode virar "fim de turno"
-// (com 700ms, fragmentos de 7 chars disparavam sugestão no meio da fala dele).
+// FALLBACK de fim de turno do lead, por tempo. Com Deepgram o fechamento passou a ser
+// dirigido por evento (speech_final / UtteranceEnd — ver handleTheirMessage); este timer
+// só decide o turno para providers sem sinal de fim de enunciado (Whisper) ou se os
+// eventos não chegarem. 1500ms: pausa de respiração/pensamento do lead não pode virar
+// "fim de turno" (com 700ms, fragmentos de 7 chars disparavam sugestão no meio da fala).
 const THEIR_COMPLETION_DEBOUNCE_MS = 1500;
+// Teto de monólogo: se o lead falar isto tudo sem nenhum fim de enunciado, força o
+// fechamento do turno. Ficar mudo por minutos é pior para o closer do que uma sugestão
+// baseada num turno ainda incompleto.
+const THEM_MAX_TURN_MS = 45000;
 
 // ── New heartbeat / renewal constants ────────────────────────────────────────────
 // Interval to send low-cost keep-alive messages so the remote service does not
@@ -37,7 +44,13 @@ class SttService {
         this.theirCompletionBuffer = '';
         this.myCompletionTimer = null;
         this.theirCompletionTimer = null;
-        
+
+        // Fim de enunciado do lead (Deepgram). O handling oficial do provedor é:
+        // fecha no speech_final=true; um UtteranceEnd que venha logo depois é ruído e
+        // deve ser ignorado; um UtteranceEnd sem speech_final anterior fecha o turno.
+        this.themSawSpeechFinal = false;
+        this.themMaxTurnTimer = null;
+
         // System audio capture
         this.systemAudioProc = null;
 
@@ -107,7 +120,39 @@ class SttService {
         }
     }
 
+    /**
+     * Arma o teto de monólogo. Chamado a cada sinal de que o lead está falando;
+     * o timer só é criado uma vez por turno e é desarmado no flush.
+     */
+    _armThemMaxTurn() {
+        if (this.themMaxTurnTimer) return;
+        this.themMaxTurnTimer = setTimeout(() => {
+            this.themMaxTurnTimer = null;
+            console.log(`[SttService] Teto de monólogo (${THEM_MAX_TURN_MS}ms) atingido — fechando turno parcial do lead.`);
+            this.endTheirTurn('teto de monólogo');
+        }, THEM_MAX_TURN_MS);
+    }
+
+    /**
+     * Fecha o turno do lead AGORA, por sinal de fim de enunciado do provedor
+     * (em vez de esperar o debounce por tempo).
+     */
+    endTheirTurn(motivo) {
+        if (this.theirCompletionTimer) {
+            clearTimeout(this.theirCompletionTimer);
+            this.theirCompletionTimer = null;
+        }
+        const pendente = (this.theirCompletionBuffer + this.theirCurrentUtterance).trim();
+        if (!pendente) return;
+        console.log(`[SttService] Fim de enunciado do lead (${motivo}) — gerando sugestão.`);
+        this.flushTheirCompletion();
+    }
+
     flushTheirCompletion() {
+        if (this.themMaxTurnTimer) {
+            clearTimeout(this.themMaxTurnTimer);
+            this.themMaxTurnTimer = null;
+        }
         const finalText = (this.theirCompletionBuffer + this.theirCurrentUtterance).trim();
         if (!this.modelInfo || !finalText) return;
 
@@ -154,6 +199,7 @@ class SttService {
     debounceTheirCompletion(text) {
         // O lead está falando — segura sugestões até ele realmente terminar.
         if (this.onThemActivity) this.onThemActivity();
+        this._armThemMaxTurn();
 
         if (this.modelInfo?.provider === 'gemini') {
             this.theirCompletionBuffer += text;
@@ -397,20 +443,46 @@ class SttService {
 
             // Deepgram
             } else if (this.modelInfo.provider === 'deepgram') {
+                // UtteranceEnd não traz transcript — é só o aviso de que o lead parou de
+                // falar por utterance_end_ms. Se o turno já foi fechado por speech_final,
+                // este evento é o eco descrito na doc do provedor e deve ser ignorado.
+                if (message.type === 'UtteranceEnd') {
+                    if (this.themSawSpeechFinal) {
+                        this.themSawSpeechFinal = false;
+                        return;
+                    }
+                    this.endTheirTurn('UtteranceEnd');
+                    return;
+                }
+
                 const text = message.channel?.alternatives?.[0]?.transcript;
                 if (!text || text.trim().length === 0) return;
 
                 const isFinal = message.is_final;
 
                 if (isFinal) {
-                    this.theirCurrentUtterance = ''; 
-                    this.debounceTheirCompletion(text); 
+                    this.theirCurrentUtterance = '';
+                    this.debounceTheirCompletion(text);
+
+                    // speech_final = o endpointing do Deepgram confirmou silêncio
+                    // suficiente: o lead terminou a frase de verdade.
+                    if (message.speech_final) {
+                        this.themSawSpeechFinal = true;
+                        this.endTheirTurn('speech_final');
+                    }
                 } else {
                     if (this.theirCompletionTimer) clearTimeout(this.theirCompletionTimer);
                     this.theirCompletionTimer = null;
 
+                    // CAUSA PRINCIPAL do bug de "sugestão em cima de sugestão": o interim
+                    // é o sinal de que o lead está falando AGORA, e ele não alimentava o
+                    // hold do summaryService — que só era renovado nos is_final. Numa frase
+                    // longa o hold vencia e a sugestão saía no meio da fala dele.
+                    if (this.onThemActivity) this.onThemActivity();
+                    this._armThemMaxTurn();
+
                     this.theirCurrentUtterance = text;
-                    
+
                     const continuousText = (this.theirCompletionBuffer + ' ' + this.theirCurrentUtterance).trim();
 
                     this.sendToRenderer('stt-update', {
@@ -428,6 +500,10 @@ class SttService {
                 if (type === 'conversation.item.input_audio_transcription.delta') {
                     if (this.theirCompletionTimer) clearTimeout(this.theirCompletionTimer);
                     this.theirCompletionTimer = null;
+                    // Mesmo motivo do interim do Deepgram: parcial do lead também é
+                    // sinal de que ele está falando agora.
+                    if (this.onThemActivity) this.onThemActivity();
+                    this._armThemMaxTurn();
                     this.theirCurrentUtterance += text;
                     const continuousText = this.theirCompletionBuffer + (this.theirCompletionBuffer ? ' ' : '') + this.theirCurrentUtterance;
                     if (text && !text.includes('vq_lbr_audio_')) {

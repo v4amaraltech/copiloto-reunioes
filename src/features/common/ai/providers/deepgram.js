@@ -3,6 +3,14 @@
 const { createClient, LiveTranscriptionEvents } = require('@deepgram/sdk');
 const WebSocket = require('ws');
 
+// Detecção de fim de fala do lead. Calibráveis: valores maiores toleram pausas mais
+// longas no meio da fala, ao custo de atrasar a sugestão.
+// endpointing: silêncio necessário para o provedor marcar speech_final=true.
+const DG_ENDPOINTING_MS = 1500;
+// utterance_end_ms: gap entre palavras que dispara o evento UtteranceEnd.
+// Mínimo aceito pelo provedor: 1000.
+const DG_UTTERANCE_END_MS = 1500;
+
 /**
  * Deepgram Provider 클래스. API 키 유효성 검사를 담당합니다.
  */
@@ -51,7 +59,16 @@ function createSTT({
       sample_rate: sampleRate.toString(),
       language: dgLanguage,
       smart_format: 'true',
+      // interim_results é obrigatório para o utterance_end_ms funcionar (doc do
+      // provedor) — além de ser o sinal de "está falando agora" que segura a sugestão.
       interim_results: 'true',
+      // Fim de fala. O default do endpointing é 10ms, curto demais: fechava o turno
+      // em qualquer respiração. 1500ms alinha com o utterance_end_ms para que uma
+      // pausa de ~1s no meio da fala do lead NÃO seja lida como fim de frase.
+      endpointing: DG_ENDPOINTING_MS.toString(),
+      // Mínimo aceito pelo provedor é 1000ms. Emite o evento UtteranceEnd quando o
+      // gap entre palavras passa deste valor.
+      utterance_end_ms: DG_UTTERANCE_END_MS.toString(),
       channels: '1',
     });
   
@@ -79,7 +96,9 @@ function createSTT({
       ws.on('message', raw => {
         let msg;
         try { msg = JSON.parse(raw.toString()); } catch { return; }
-        if (msg.channel?.alternatives?.[0]?.transcript !== undefined) {
+        // UtteranceEnd é o sinal de fim de enunciado e NÃO traz transcript — o filtro
+        // por transcript sozinho o descartaria silenciosamente.
+        if (msg.channel?.alternatives?.[0]?.transcript !== undefined || msg.type === 'UtteranceEnd') {
           callbacks.onmessage?.({ provider: 'deepgram', ...msg });
         }
       });

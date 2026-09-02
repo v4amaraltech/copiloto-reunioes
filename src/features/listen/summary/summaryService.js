@@ -5,14 +5,22 @@ const sessionRepository = require('../../common/repositories/session');
 const summaryRepository = require('./repositories');
 const modelStateService = require('../../common/services/modelStateService');
 
-// Estabilidade das sugestões ao vivo (feedback do closer em call real):
-// - cooldown mínimo entre sugestões, para não metralhar a tela;
-// - segurar análise enquanto o closer está falando (ele não lê nada nessa hora).
-const SUGGESTION_COOLDOWN_MS = 8000;
+// Estabilidade das sugestões ao vivo (feedback do closer em call real).
+// Calibráveis — a intenção é ajustar estes valores com uso real.
+//
+// Tempo mínimo que uma sugestão fica na tela antes de poder ser substituída, contado a
+// partir do ÚLTIMO token (fim do stream), que é quando ela ficou legível por inteiro.
+// Substitui o antigo SUGGESTION_COOLDOWN_MS de 8s: um relógio só. 2 frases em pt-BR dão
+// ~25-35 palavras, e o closer lê sob carga de call (falando e ouvindo ao mesmo tempo),
+// a ~2,5-3 palavras/s — daí os 10s.
+const MIN_READ_MS = 10000;
+// Segurar análise enquanto o closer está falando (ele não lê nada nessa hora).
 const ME_SPEAKING_HOLD_MS = 2500;
-// Só gerar sugestão com o lead em silêncio real há pelo menos este tempo
-// (evita sugestão caindo no meio da fala dele e sendo trocada em seguida).
-const THEM_QUIET_HOLD_MS = 1200;
+// Silêncio mínimo do lead antes de gerar. Com o fechamento de turno agora dirigido pelos
+// eventos de fim de enunciado do provedor (speech_final / UtteranceEnd no sttService),
+// este hold deixou de carregar a detecção e virou só uma folga — mas passou a ser de
+// fato alimentado durante a fala, inclusive pelos resultados parciais.
+const THEM_QUIET_HOLD_MS = 800;
 
 class SummaryService {
     constructor() {
@@ -293,7 +301,7 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
         if (this.analysisInFlight || !this.analysisPending) return;
 
         const now = Date.now();
-        const cooldownLeft = this.lastSuggestionAt + SUGGESTION_COOLDOWN_MS - now;
+        const cooldownLeft = this.lastSuggestionAt + MIN_READ_MS - now;
         const meHoldLeft = this.lastMeActivityAt + ME_SPEAKING_HOLD_MS - now;
         const themHoldLeft = this.lastThemActivityAt + THEM_QUIET_HOLD_MS - now;
         const waitMs = Math.max(cooldownLeft, meHoldLeft, themHoldLeft, 0);
@@ -301,7 +309,7 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
         if (waitMs > 0) {
             if (!this._deferTimer) {
                 const motivo = themHoldLeft >= Math.max(cooldownLeft, meHoldLeft) ? 'lead ainda falando'
-                    : meHoldLeft > cooldownLeft ? 'closer falando' : 'cooldown';
+                    : meHoldLeft > cooldownLeft ? 'closer falando' : 'sugestão atual ainda sendo lida';
                 console.log(`[SummaryService] Sugestão adiada ${waitMs}ms (${motivo})`);
                 this._deferTimer = setTimeout(() => {
                     this._deferTimer = null;
@@ -323,6 +331,10 @@ Gere agora a sugestão para o closer (máximo 2 frases, pt-BR).`,
                     console.log(`[Latency] suggestion-complete +${Date.now() - this._latencyT0}ms`);
                 }
                 if (data) {
+                    // Fim do stream = último token na tela. O relógio de leitura da
+                    // sugestão nova começa aqui. Num MANTER não passamos por este ponto,
+                    // e é o correto: a sugestão em tela é a mesma de antes e o relógio
+                    // dela já está correndo — reiniciar seria dar tempo em dobro.
                     this.lastSuggestionAt = Date.now();
                     console.log('Sending structured data to renderer');
                     this.sendToRenderer('summary-update', data);
