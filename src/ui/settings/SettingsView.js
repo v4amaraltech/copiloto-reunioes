@@ -912,6 +912,238 @@ export class SettingsView extends LitElement {
             line-height: 1.4;
         }
 
+        /* ══════════════[ ABA REUNIÕES ]══════════════ */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: 11px;
+            width: 15px;
+            height: 15px;
+            color: rgba(255, 255, 255, 0.38);
+            pointer-events: none;
+        }
+
+        .search-box .field-input {
+            padding-left: 34px;
+        }
+
+        .search-clear {
+            position: absolute;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.75);
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .search-clear:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
+
+        .meeting-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .meeting-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .meeting-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .meeting-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .meeting-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .meeting-meta {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.48);
+        }
+
+        .meeting-meta .sep {
+            opacity: 0.5;
+        }
+
+        .meeting-live {
+            color: #ff8a95;
+            font-weight: 600;
+        }
+
+        .meeting-chevron {
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, 0.32);
+            display: flex;
+        }
+
+        .meeting-chevron svg {
+            width: 15px;
+            height: 15px;
+        }
+
+        .meeting-snippets {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 3px;
+        }
+
+        .meeting-snippet {
+            font-size: 11.5px;
+            line-height: 1.45;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 8px;
+            padding: 6px 9px;
+        }
+
+        .meeting-snippet mark {
+            background: rgba(238, 27, 46, 0.35);
+            color: white;
+            font-weight: 600;
+            border-radius: 3px;
+            padding: 0 2px;
+        }
+
+        .empty-state {
+            padding: 26px 14px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 12.5px;
+            line-height: 1.6;
+        }
+
+        /* ── Detalhe da reunião (mesma aba, no lugar da lista) ── */
+        .meeting-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .meeting-detail-head {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .transcript-box {
+            flex: 1;
+            min-height: 140px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            padding: 13px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+
+        .transcript-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .transcript-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .turn {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            max-width: 88%;
+        }
+
+        .turn.me {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .turn-who {
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .turn-text {
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 11px;
+            padding: 8px 11px;
+            user-select: text;
+            cursor: text;
+        }
+
+        .turn.me .turn-text {
+            background: rgba(238, 27, 46, 0.16);
+            border-color: rgba(238, 27, 46, 0.35);
+        }
+
+        .chat-soon {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 11px 13px;
+            border-radius: 11px;
+            border: 1px dashed rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.42);
+        }
+
+        .chat-soon svg {
+            width: 15px;
+            height: 15px;
+            flex-shrink: 0;
+        }
+
         /* ══════════════[ ABA CONTA ]══════════════ */
         .account-head {
             display: flex;
@@ -1324,6 +1556,17 @@ export class SettingsView extends LitElement {
         isLlmListVisible: { type: Boolean },
         isSttListVisible: { type: Boolean },
         activeTab: { type: String, state: true },
+        // Aba 'Reuniões'
+        meetingsMode: { type: String, state: true },
+        meetings: { type: Array, state: true },
+        meetingsLoading: { type: Boolean, state: true },
+        meetingsError: { type: String, state: true },
+        meetingQuery: { type: String, state: true },
+        meetingResults: { type: Array, state: true },
+        meetingSearching: { type: Boolean, state: true },
+        openMeeting: { type: Object, state: true },
+        openMeetingTurns: { type: Array, state: true },
+        openMeetingLoading: { type: Boolean, state: true },
         presets: { type: Array, state: true },
         selectedPreset: { type: Object, state: true },
         showPresets: { type: Boolean, state: true },
@@ -1370,7 +1613,18 @@ export class SettingsView extends LitElement {
         this.showPresets = false;
         this.v4RecoveryNotice = '';
         this.v4RecoverySending = false;
-        this.activeTab = 'agentes';
+        this.activeTab = 'reunioes';
+        this.meetingsMode = 'list';
+        this.meetings = [];
+        this.meetingsLoading = false;
+        this.meetingsError = '';
+        this.meetingQuery = '';
+        this.meetingResults = [];
+        this.meetingSearching = false;
+        this.openMeeting = null;
+        this.openMeetingTurns = [];
+        this.openMeetingLoading = false;
+        this._meetingSearchTimer = null;
         this.agentsMode = 'list';
         this.agentDraftId = null;
         this.agentDraftTitle = '';
@@ -1499,6 +1753,136 @@ export class SettingsView extends LitElement {
         }
     }
 
+
+    // ── Aba 'Reuniões' ───────────────────────────────────────────────
+
+    /** Carrega a lista de reuniões gravadas, mais recentes primeiro. */
+    async loadMeetings() {
+        if (!window.api?.sessions?.list) {
+            this.meetingsError = 'Lista de reuniões indisponível nesta versão.';
+            return;
+        }
+        this.meetingsLoading = true;
+        this.meetingsError = '';
+        this.requestUpdate();
+        try {
+            const result = await window.api.sessions.list();
+            if (result?.success) {
+                this.meetings = (result.sessions || []).slice().sort((a, b) => (b.started_at || 0) - (a.started_at || 0));
+            } else {
+                this.meetingsError = result?.error || 'Não foi possível carregar as reuniões.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao carregar reuniões:', error);
+            this.meetingsError = 'Não foi possível carregar as reuniões.';
+        } finally {
+            this.meetingsLoading = false;
+            this.requestUpdate();
+        }
+    }
+
+    /** Digitar na busca: com 2+ caracteres consulta o índice, com debounce. */
+    handleMeetingSearchInput(value) {
+        this.meetingQuery = value;
+        this.requestUpdate();
+        clearTimeout(this._meetingSearchTimer);
+
+        const termo = (value || '').trim();
+        if (termo.length < 2) {
+            this.meetingResults = [];
+            this.meetingSearching = false;
+            this.requestUpdate();
+            return;
+        }
+
+        this.meetingSearching = true;
+        this.requestUpdate();
+        this._meetingSearchTimer = setTimeout(() => this.runMeetingSearch(termo), 250);
+    }
+
+    async runMeetingSearch(termo) {
+        if (!window.api?.sessions?.search) return;
+        try {
+            const result = await window.api.sessions.search(termo, 30);
+            // Uma resposta atrasada não pode sobrescrever uma busca mais nova.
+            if ((this.meetingQuery || '').trim() !== termo) return;
+            this.meetingResults = result?.success ? (result.results || []) : [];
+        } catch (error) {
+            console.error('[SettingsView] Falha na busca de reuniões:', error);
+            this.meetingResults = [];
+        } finally {
+            this.meetingSearching = false;
+            this.requestUpdate();
+        }
+    }
+
+    clearMeetingSearch() {
+        clearTimeout(this._meetingSearchTimer);
+        this.meetingQuery = '';
+        this.meetingResults = [];
+        this.meetingSearching = false;
+        this.requestUpdate();
+    }
+
+    /** Abre a transcrição da reunião no lugar da lista, na mesma aba. */
+    async openMeetingDetail(meeting) {
+        this.openMeeting = meeting;
+        this.openMeetingTurns = [];
+        this.openMeetingLoading = true;
+        this.meetingsMode = 'detail';
+        this.requestUpdate();
+        try {
+            const result = await window.api.sessions.transcripts(meeting.id);
+            this.openMeetingTurns = result?.success ? (result.transcripts || []) : [];
+        } catch (error) {
+            console.error('[SettingsView] Falha ao carregar a transcrição:', error);
+            this.openMeetingTurns = [];
+        } finally {
+            this.openMeetingLoading = false;
+            this.requestUpdate();
+        }
+    }
+
+    backToMeetingList() {
+        this.meetingsMode = 'list';
+        this.openMeeting = null;
+        this.openMeetingTurns = [];
+        this.requestUpdate();
+    }
+
+    /** 'ter, 2 set · 14:30' — started_at vem em segundos. */
+    formatMeetingDate(startedAt) {
+        if (!startedAt) return 'sem data';
+        const d = new Date(Number(startedAt) * 1000);
+        if (Number.isNaN(d.getTime())) return 'sem data';
+        // Montado à mão porque o pt-BR devolve 'qua., 2 de set.' — queremos 'qua, 2 set'.
+        const semana = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace(/\./g, '');
+        const mes = d.toLocaleDateString('pt-BR', { month: 'short' }).replace(/\./g, '');
+        const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `${semana}, ${d.getDate()} ${mes} · ${hora}`;
+    }
+
+    /** Duração em minutos; sem ended_at a call ainda está rolando. */
+    formatMeetingDuration(startedAt, endedAt) {
+        if (!endedAt) return null;
+        const minutos = Math.max(0, Math.round((Number(endedAt) - Number(startedAt)) / 60));
+        if (minutos < 1) return 'menos de 1 min';
+        return `${minutos} min`;
+    }
+
+    /**
+     * O FTS devolve o termo entre colchetes ('falou de [preço] ontem…').
+     * Aqui os colchetes viram <mark> — e o resto do texto continua escapado
+     * porque cada pedaço entra no template como texto, não como HTML.
+     */
+    renderSnippet(snippet) {
+        const partes = String(snippet || '').split(/(\[[^\]]*\])/g).filter(p => p !== '');
+        return html`${partes.map(parte =>
+            parte.startsWith('[') && parte.endsWith(']')
+                ? html`<mark>${parte.slice(1, -1)}</mark>`
+                : parte
+        )}`;
+    }
 
     async loadV4AuthState() {
         try {
@@ -1839,6 +2223,7 @@ export class SettingsView extends LitElement {
         this.setupWindowResize();
         this.loadAutoUpdateSetting();
         this.loadV4AuthState();
+        this.loadMeetings();
         // Force one height calculation immediately (innerHeight may be 0 at first)
         setTimeout(() => this.updateScrollHeight(), 0);
     }
@@ -1968,6 +2353,9 @@ export class SettingsView extends LitElement {
         // Com o editor de agentes aberto o texto está sendo escrito: sumir a
         // janela ao tirar o mouse faria o usuário perder o que digitou de vista.
         if (this.activeTab === 'agentes' && this.agentsMode === 'editor') return;
+        // Mesma ideia na aba de reuniões: lendo a transcrição ou digitando na
+        // busca, sumir com a janela faria o usuário perder o que estava vendo.
+        if (this.activeTab === 'reunioes' && (this.meetingsMode === 'detail' || this.meetingQuery)) return;
         window.api.settingsView.hideSettingsWindow();
     }
 
@@ -2497,6 +2885,7 @@ export class SettingsView extends LitElement {
         `;
 
         const tabs = [
+            { id: 'reunioes', label: 'Reuniões', icon: icon(svg`<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.2v3.4M16 3.2v3.4M7.5 13h5M7.5 16.5h8"/>`) },
             { id: 'agentes', label: 'Agentes', icon: icon(svg`<path d="M12 3l1.9 4.9L19 9.8l-4.6 1.6L12 16.5l-2.4-5.1L5 9.8l5.1-1.9L12 3z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/>`) },
             { id: 'conta', label: 'Conta', icon: icon(svg`<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.2 3.6-5 7-5s6.2 1.8 7 5"/>`) },
             { id: 'modelos', label: 'Modelos & API', icon: icon(svg`<rect x="5.5" y="5.5" width="13" height="13" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>`) },
@@ -2652,6 +3041,128 @@ export class SettingsView extends LitElement {
 
         const agentesPane = this.agentsMode === 'editor' ? agentsEditorPane : agentsListPane;
 
+        const searchIcon = icon(svg`<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>`);
+        const chevronIcon = icon(svg`<path d="M9.5 5.5L16 12l-6.5 6.5"/>`);
+        const chatIcon = icon(svg`<path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4.5 3.5V6.5A2.5 2.5 0 0 1 7 4h10.5A2.5 2.5 0 0 1 20 6.5v8z"/>`);
+
+        const meetingRow = (m, extra) => html`
+            <div class="meeting-item" @click=${() => this.openMeetingDetail(m)}>
+                <div class="meeting-body">
+                    <span class="meeting-title">${m.title || 'Reunião sem título'}</span>
+                    <div class="meeting-meta">
+                        <span>${this.formatMeetingDate(m.started_at)}</span>
+                        <span class="sep">·</span>
+                        ${m.ended_at
+                            ? html`<span>${this.formatMeetingDuration(m.started_at, m.ended_at)}</span>`
+                            : html`<span class="meeting-live">em andamento</span>`}
+                        ${extra || ''}
+                    </div>
+                    ${(m.snippets && m.snippets.length) ? html`
+                        <div class="meeting-snippets">
+                            ${m.snippets.slice(0, 2).map(sn => html`
+                                <div class="meeting-snippet">${this.renderSnippet(sn)}</div>
+                            `)}
+                        </div>
+                    ` : ''}
+                </div>
+                <span class="meeting-chevron">${chevronIcon}</span>
+            </div>
+        `;
+
+        const buscando = (this.meetingQuery || '').trim().length >= 2;
+        const meetingsToShow = buscando ? this.meetingResults : this.meetings;
+
+        const meetingsListPane = html`
+            <h2 class="content-title">Reuniões</h2>
+            <p class="content-hint">
+                Tudo o que você gravou fica aqui. Busque por um cliente, um assunto ou uma frase dita na call.
+            </p>
+
+            <div class="search-box">
+                ${searchIcon}
+                <input
+                    class="field-input"
+                    type="search"
+                    placeholder="Buscar por cliente, assunto ou frase…"
+                    .value=${this.meetingQuery}
+                    @input=${e => this.handleMeetingSearchInput(e.target.value)}
+                />
+                ${this.meetingQuery ? html`
+                    <button class="search-clear" title="Limpar busca" @click=${() => this.clearMeetingSearch()}>✕</button>
+                ` : ''}
+            </div>
+
+            ${this.meetingsError ? html`<div class="agent-banner error"><span>${this.meetingsError}</span></div>` : ''}
+
+            ${this.meetingsLoading && !buscando ? html`
+                <div class="loading-state"><div class="loading-spinner"></div><span>Carregando reuniões…</span></div>
+            ` : this.meetingSearching ? html`
+                <div class="loading-state"><div class="loading-spinner"></div><span>Buscando…</span></div>
+            ` : meetingsToShow.length === 0 ? html`
+                <div class="empty-state">
+                    ${buscando
+                        ? html`Nada encontrado para “${this.meetingQuery.trim()}”.`
+                        : html`Nenhuma reunião gravada ainda.<br>Grave uma call e ela aparece aqui com título e transcrição.`}
+                </div>
+            ` : html`
+                <div class="meeting-list">
+                    ${meetingsToShow.map(m => meetingRow(
+                        m,
+                        buscando && m.match_count
+                            ? html`<span class="sep">·</span><span>${m.match_count} ${m.match_count === 1 ? 'trecho' : 'trechos'}</span>`
+                            : ''
+                    ))}
+                </div>
+            `}
+        `;
+
+        const meetingDetailPane = html`
+            <div class="agent-editor-head">
+                <button class="agent-back" @click=${() => this.backToMeetingList()}>
+                    ${backIcon} Voltar
+                </button>
+                <h2 class="content-title" style="margin:0;">Reunião</h2>
+            </div>
+
+            <div class="meeting-detail">
+                <div class="meeting-detail-head">
+                    <span class="card-title">${this.openMeeting?.title || 'Reunião sem título'}</span>
+                    <div class="meeting-meta">
+                        <span>${this.formatMeetingDate(this.openMeeting?.started_at)}</span>
+                        <span class="sep">·</span>
+                        ${this.openMeeting?.ended_at
+                            ? html`<span>${this.formatMeetingDuration(this.openMeeting.started_at, this.openMeeting.ended_at)}</span>`
+                            : html`<span class="meeting-live">em andamento</span>`}
+                    </div>
+                </div>
+
+                ${this.openMeetingLoading ? html`
+                    <div class="loading-state"><div class="loading-spinner"></div><span>Carregando transcrição…</span></div>
+                ` : this.openMeetingTurns.length === 0 ? html`
+                    <div class="empty-state">Esta reunião não tem falas transcritas.</div>
+                ` : html`
+                    <div class="transcript-box">
+                        ${this.openMeetingTurns.map(t => {
+                            const souEu = String(t.speaker || '').toLowerCase() === 'me';
+                            return html`
+                                <div class="turn ${souEu ? 'me' : ''}">
+                                    <span class="turn-who">${souEu ? 'Você' : 'Cliente'}</span>
+                                    <span class="turn-text">${t.text}</span>
+                                </div>
+                            `;
+                        })}
+                    </div>
+                `}
+
+                <div class="chat-soon">
+                    ${chatIcon}
+                    <span>Conversar com esta reunião chega na próxima atualização</span>
+                </div>
+            </div>
+        `;
+
+        const reunioesPane = this.meetingsMode === 'detail' ? meetingDetailPane : meetingsListPane;
+
         const contaPane = html`
             <h2 class="content-title">Conta</h2>
             <p class="content-hint">
@@ -2748,6 +3259,7 @@ export class SettingsView extends LitElement {
         `;
 
         const panes = {
+            reunioes: reunioesPane,
             agentes: agentesPane,
             conta: contaPane,
             modelos: modelosPane,
@@ -2763,7 +3275,10 @@ export class SettingsView extends LitElement {
                     <div class="sidebar-title">Copiloto V4</div>
                     ${tabs.map(tab => html`
                         <div class="nav-item ${this.activeTab === tab.id ? 'active' : ''}"
-                             @click=${() => { this.activeTab = tab.id; }}>
+                             @click=${() => {
+                                 this.activeTab = tab.id;
+                                 if (tab.id === 'reunioes' && this.meetingsMode === 'list') this.loadMeetings();
+                             }}>
                             <span class="nav-icon">${tab.icon}</span>
                             ${tab.label}
                         </div>
