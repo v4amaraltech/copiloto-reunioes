@@ -14,6 +14,9 @@ const LATEST_SCHEMA = {
             { name: 'id', type: 'TEXT PRIMARY KEY' },
             { name: 'uid', type: 'TEXT NOT NULL' },
             { name: 'title', type: 'TEXT' },
+            // Origem do título: 'padrao' (Session @ hora), 'ia' (gerado da transcrição).
+            // 'calendario' entra na fatia 3, quando o vínculo com a agenda existir.
+            { name: 'title_source', type: 'TEXT' },
             { name: 'session_type', type: 'TEXT DEFAULT \'ask\'' },
             { name: 'started_at', type: 'INTEGER' },
             { name: 'ended_at', type: 'INTEGER' },

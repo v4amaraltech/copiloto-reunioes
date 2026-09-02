@@ -27,6 +27,13 @@ const sessionRepositoryAdapter = {
     },
 
     updateTitle: (id, title) => getBaseRepository().updateTitle(id, title),
+
+    updateTitleWithSource: (id, title, source) => getBaseRepository().updateTitleWithSource(id, title, source),
+
+    getSessionsNeedingTitle: (options) => {
+        const uid = authService.getCurrentUserId();
+        return getBaseRepository().getSessionsNeedingTitle(uid, options);
+    },
     
     deleteWithRelatedData: (id) => getBaseRepository().deleteWithRelatedData(id),
 

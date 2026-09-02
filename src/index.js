@@ -274,6 +274,13 @@ app.whenReady().then(async () => {
                 .catch(err => console.error('[V4Sync] retryPending error:', err.message));
         }, 10_000);
 
+        // Nomeia por IA as calls antigas que ficaram com "Session @ <hora>".
+        // Background, uma por vez e com teto por boot — não atrapalha o uso do app.
+        setTimeout(() => {
+            require('./features/common/services/sessionTitleService').backfillTitles()
+                .catch(err => console.error('[SessionTitle] backfill error:', err.message));
+        }, 15_000);
+
         // macOS: registra o app no subsistema de gravação de tela no boot.
         // Sem isso, o app nunca aparece na lista dos Ajustes nem dispara o aviso nativo.
         if (process.platform === 'darwin') {
@@ -388,6 +395,7 @@ function setupWebDataHandlers() {
     const askRepository = require('./features/ask/repositories');
     const userRepository = require('./features/common/repositories/user');
     const presetRepository = require('./features/common/repositories/preset');
+    const searchRepository = require('./features/common/repositories/search');
 
     const handleRequest = async (channel, responseChannel, payload) => {
         let result;
@@ -411,6 +419,10 @@ function setupWebDataHandlers() {
                         summaryRepository.getSummaryBySessionId(payload)
                     ]);
                     result = { session, transcripts, ai_messages, summary };
+                    break;
+                case 'search-sessions':
+                    // payload: { query, limit }
+                    result = await searchRepository.search(payload?.query, payload?.limit);
                     break;
                 case 'delete-session':
                     result = await sessionRepository.deleteWithRelatedData(payload);

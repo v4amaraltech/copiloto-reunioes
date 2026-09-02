@@ -33,6 +33,42 @@ function updateTitle(id, title) {
     return { changes: result.changes };
 }
 
+/**
+ * Grava o título e de onde ele veio ('padrao' | 'ia' | futuramente 'calendario').
+ */
+function updateTitleWithSource(id, title, source) {
+    const db = sqliteClient.getDb();
+    const now = Math.floor(Date.now() / 1000);
+    const result = db
+        .prepare('UPDATE sessions SET title = ?, title_source = ?, updated_at = ? WHERE id = ?')
+        .run(title, source, now, id);
+    return { changes: result.changes };
+}
+
+/**
+ * Sessões que ainda têm o título automático "Session @ <hora>" e transcrição
+ * suficiente para a IA nomear. Usado pelo backfill no boot.
+ *
+ * Não depende de nada específico deste banco: a regra é title_source ausente/'padrao'
+ * + título com o prefixo herdado + mínimo de falas.
+ */
+function getSessionsNeedingTitle(uid, { minTurns = 6, limit = 40 } = {}) {
+    const db = sqliteClient.getDb();
+    const query = `
+        SELECT s.id, s.title, s.started_at, COUNT(t.id) AS turns
+        FROM sessions s
+        JOIN transcripts t ON t.session_id = s.id
+        WHERE s.uid = ?
+          AND (s.title_source IS NULL OR s.title_source = '' OR s.title_source = 'padrao')
+          AND (s.title IS NULL OR s.title LIKE 'Session @%')
+        GROUP BY s.id
+        HAVING COUNT(t.id) >= ?
+        ORDER BY s.started_at DESC
+        LIMIT ?
+    `;
+    return db.prepare(query).all(uid, minTurns, limit);
+}
+
 function deleteWithRelatedData(id) {
     const db = sqliteClient.getDb();
     const transaction = db.transaction(() => {
@@ -129,6 +165,8 @@ module.exports = {
     create,
     getAllByUserId,
     updateTitle,
+    updateTitleWithSource,
+    getSessionsNeedingTitle,
     deleteWithRelatedData,
     end,
     updateType,

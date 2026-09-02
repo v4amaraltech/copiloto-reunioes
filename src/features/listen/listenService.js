@@ -248,11 +248,22 @@ class ListenService {
                 await sessionRepository.end(endedSessionId);
                 console.log(`[DB] Session ${endedSessionId} ended.`);
 
-                // Envio pós-call ao Appwrite (assíncrono; falha entra na fila de retry)
-                const v4SyncService = require('../common/services/v4SyncService');
-                v4SyncService.uploadSession(endedSessionId).catch(err =>
-                    console.error('[ListenService] Post-call sync error:', err.message)
-                );
+                // Pós-call, fora do caminho crítico: primeiro a IA nomeia a sessão
+                // (com timeout próprio; falha só mantém o título padrão) e só depois
+                // ela sobe ao Appwrite — assim o título novo já vai no mesmo envio.
+                (async () => {
+                    try {
+                        await require('../common/services/sessionTitleService')
+                            .generateForSession(endedSessionId);
+                    } catch (err) {
+                        console.warn('[ListenService] Title generation error:', err.message);
+                    }
+
+                    const v4SyncService = require('../common/services/v4SyncService');
+                    await v4SyncService.uploadSession(endedSessionId).catch(err =>
+                        console.error('[ListenService] Post-call sync error:', err.message)
+                    );
+                })();
             }
 
             // Reset state

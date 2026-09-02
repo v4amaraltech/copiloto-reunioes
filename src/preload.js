@@ -178,6 +178,14 @@ contextBridge.exposeInMainWorld('api', {
     removeOnScrollResponseDown: (callback) => ipcRenderer.removeListener('aks:scrollResponseDown', callback)
   },
 
+  // Busca nas sessões gravadas (título + conteúdo da transcrição, via FTS5).
+  // Devolve { success, results: [{ id, title, started_at, ended_at, match_count, snippets }] }.
+  sessions: {
+    search: (query, limit) => ipcRenderer.invoke('sessions:search', { query, limit }),
+    list: () => ipcRenderer.invoke('sessions:list'),
+    transcripts: (sessionId) => ipcRenderer.invoke('sessions:transcripts', { sessionId }),
+  },
+
   // src/ui/listen/ListenView.js
   listenView: {
     // Window Management

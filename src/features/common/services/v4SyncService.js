@@ -148,6 +148,40 @@ class V4SyncService {
         }
     }
 
+    /**
+     * Propaga só o título ao documento já existente no Appwrite.
+     *
+     * Usado quando a sessão foi enviada antes de a IA nomeá-la (backfill das calls
+     * antigas). Documento inexistente (404) ou usuário deslogado não são erro: o
+     * título vai junto no próximo `uploadSession`.
+     */
+    async pushSessionTitle(sessionId, title) {
+        if (!sessionId || !title) return { success: false, error: 'missing_args' };
+
+        try {
+            const v4AuthService = require('./v4AuthService');
+            const uid = await v4AuthService.getUserId();
+            if (!uid) return { success: false, skipped: 'sem_login' };
+
+            const databases = getDatabasesInstance();
+            await databases.updateDocument({
+                databaseId: DATABASE_ID,
+                collectionId: 'sessions',
+                documentId: sessionId,
+                data: { title, updated_at: Math.floor(Date.now() / 1000) },
+            });
+            console.log(`[V4Sync] Título da sessão ${sessionId} atualizado no Appwrite.`);
+            return { success: true };
+        } catch (err) {
+            if (err?.code === 404) {
+                // Ainda não subiu — o uploadSession vai levar o título novo.
+                return { success: false, skipped: 'nao_enviada' };
+            }
+            console.warn(`[V4Sync] Falha ao atualizar título da sessão ${sessionId}:`, err.message);
+            return { success: false, error: err.message };
+        }
+    }
+
     /** Reenvia sessões pendentes (chamado no boot). */
     async retryPending() {
         const queue = this._readQueue();

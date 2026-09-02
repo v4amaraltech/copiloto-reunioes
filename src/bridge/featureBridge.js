@@ -7,6 +7,9 @@ const ollamaService = require('../features/common/services/ollamaService');
 const modelStateService = require('../features/common/services/modelStateService');
 const shortcutsService = require('../features/shortcuts/shortcutsService');
 const presetRepository = require('../features/common/repositories/preset');
+const searchRepository = require('../features/common/repositories/search');
+const sessionRepository = require('../features/common/repositories/session');
+const sttRepository = require('../features/listen/stt/repositories');
 const localAIManager = require('../features/common/services/localAIManager');
 const askService = require('../features/ask/askService');
 const listenService = require('../features/listen/listenService');
@@ -111,6 +114,42 @@ module.exports = {
     ipcMain.handle('listen:stopMacosSystemAudio', async () => await listenService.handleStopMacosAudio());
     ipcMain.handle('update-google-search-setting', async (event, enabled) => await listenService.handleUpdateGoogleSearchSetting(enabled));
     ipcMain.handle('listen:isSessionActive', async () => await listenService.isSessionActive());
+
+    // Sessions — busca por conteúdo da transcrição e por título.
+    // A UI de busca (janela flutuante / painel) consome via window.api.sessions.search().
+    ipcMain.handle('sessions:search', async (event, { query, limit } = {}) => {
+      try {
+        const results = await searchRepository.search(query, limit);
+        return { success: true, results };
+      } catch (error) {
+        console.error('[FeatureBridge] sessions:search failed:', error);
+        return { success: false, error: error.message, results: [] };
+      }
+    });
+
+    // Lista das reuniões gravadas (aba 'Reuniões' das configurações).
+    ipcMain.handle('sessions:list', async () => {
+      try {
+        const todas = await sessionRepository.getAllByUserId();
+        // Só as calls gravadas: sessões de 'ask' não são reuniões.
+        const sessions = (todas || []).filter(s => !s.session_type || s.session_type === 'listen');
+        return { success: true, sessions };
+      } catch (error) {
+        console.error('[FeatureBridge] sessions:list failed:', error);
+        return { success: false, error: error.message, sessions: [] };
+      }
+    });
+
+    // Transcrição completa de uma reunião, em ordem cronológica.
+    ipcMain.handle('sessions:transcripts', async (event, { sessionId } = {}) => {
+      try {
+        const transcripts = await sttRepository.getAllTranscriptsBySessionId(sessionId);
+        return { success: true, transcripts: transcripts || [] };
+      } catch (error) {
+        console.error('[FeatureBridge] sessions:transcripts failed:', error);
+        return { success: false, error: error.message, transcripts: [] };
+      }
+    });
 
     // V4 Auth (Appwrite) - jornada de conta dos closers
     const v4AuthService = require('../features/common/services/v4AuthService');

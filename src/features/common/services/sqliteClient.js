@@ -7,6 +7,7 @@ class SQLiteClient {
         this.db = null;
         this.dbPath = null;
         this.defaultUserId = 'default_user';
+        this.searchIndexReady = false;
     }
 
     connect(dbPath) {
@@ -129,7 +130,79 @@ class SQLiteClient {
                 this.updateTable(tableName, tableSchema);
             }
         }
+
+        this.synchronizeSearchIndex();
+
         console.log('[DB Sync] Schema synchronization finished.');
+    }
+
+    /**
+     * Índice de busca (FTS5) sobre transcripts.text, em modo "external content":
+     * o texto continua morando em `transcripts` e o índice só guarda os termos.
+     * Criado e populado uma única vez; a partir daí os triggers mantêm em dia.
+     *
+     * Best-effort: se o SQLite embarcado não tiver FTS5, a busca fica indisponível
+     * mas o app continua subindo normalmente.
+     */
+    synchronizeSearchIndex() {
+        try {
+            const tablesInDb = this.getTablesFromDb();
+            const jaExiste = tablesInDb.includes('transcripts_fts');
+
+            if (!jaExiste) {
+                console.log('[DB Sync] Creating FTS5 search index (transcripts_fts)...');
+                this.db.exec(`
+                    CREATE VIRTUAL TABLE transcripts_fts USING fts5(
+                        text,
+                        content='transcripts',
+                        content_rowid='rowid',
+                        tokenize="unicode61 remove_diacritics 2"
+                    )
+                `);
+            }
+
+            // Triggers são recriados sempre: baratos e garantem consistência mesmo
+            // se uma versão antiga tiver deixado só parte deles.
+            this.db.exec(`
+                DROP TRIGGER IF EXISTS transcripts_fts_ai;
+                DROP TRIGGER IF EXISTS transcripts_fts_ad;
+                DROP TRIGGER IF EXISTS transcripts_fts_au;
+
+                CREATE TRIGGER transcripts_fts_ai AFTER INSERT ON transcripts BEGIN
+                    INSERT INTO transcripts_fts(rowid, text) VALUES (new.rowid, new.text);
+                END;
+                CREATE TRIGGER transcripts_fts_ad AFTER DELETE ON transcripts BEGIN
+                    INSERT INTO transcripts_fts(transcripts_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+                END;
+                CREATE TRIGGER transcripts_fts_au AFTER UPDATE ON transcripts BEGIN
+                    INSERT INTO transcripts_fts(transcripts_fts, rowid, text) VALUES ('delete', old.rowid, old.text);
+                    INSERT INTO transcripts_fts(rowid, text) VALUES (new.rowid, new.text);
+                END;
+            `);
+
+            // Popula na criação (transcrições que já existiam) e também quando o
+            // índice ficou vazio com transcripts populado (banco restaurado, etc.).
+            //
+            // Atenção: num índice "external content", `COUNT(*) FROM transcripts_fts`
+            // conta a tabela de conteúdo, não o índice — sempre bateria com o total e
+            // o rebuild nunca rodaria. Quem sabe quantos documentos estão de fato
+            // indexados é a shadow table _docsize.
+            const indexados = this.db.prepare('SELECT COUNT(*) AS n FROM transcripts_fts_docsize').get().n;
+            const totais = this.db.prepare('SELECT COUNT(*) AS n FROM transcripts').get().n;
+            if (indexados < totais) {
+                console.log(`[DB Sync] Populating search index: ${indexados}/${totais} indexed, rebuilding...`);
+                this.db.exec(`INSERT INTO transcripts_fts(transcripts_fts) VALUES ('rebuild')`);
+            }
+
+            this.searchIndexReady = true;
+        } catch (err) {
+            this.searchIndexReady = false;
+            console.error('[DB Sync] Search index unavailable (FTS5):', err.message);
+        }
+    }
+
+    isSearchIndexReady() {
+        return this.searchIndexReady === true;
     }
 
     getTablesFromDb() {

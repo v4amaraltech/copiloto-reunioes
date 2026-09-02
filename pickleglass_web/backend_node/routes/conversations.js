@@ -22,6 +22,25 @@ router.post('/', async (req, res) => {
     }
 });
 
+// Busca por conteúdo da transcrição (FTS5) e por título da sessão.
+// Precisa vir ANTES de '/:session_id', senão o Express trataria "search" como um id.
+router.get('/search', async (req, res) => {
+    const query = (req.query.q || '').toString().trim();
+    if (!query) {
+        return res.json({ query: '', results: [] });
+    }
+
+    const limit = Math.max(1, Math.min(parseInt(req.query.limit, 10) || 20, 100));
+
+    try {
+        const results = await ipcRequest(req, 'search-sessions', { query, limit });
+        res.json({ query, results: results || [] });
+    } catch (error) {
+        console.error('Failed to search sessions via IPC:', error);
+        res.status(500).json({ error: 'Failed to search sessions' });
+    }
+});
+
 router.get('/:session_id', async (req, res) => {
     try {
         const details = await ipcRequest(req, 'get-session-details', req.params.session_id);
@@ -43,12 +62,6 @@ router.delete('/:session_id', async (req, res) => {
         console.error(`Failed to delete session via IPC for ${req.params.session_id}:`, error);
         res.status(500).json({ error: 'Failed to delete session' });
     }
-});
-
-// The search functionality will be more complex to move to IPC.
-// For now, we can disable it or leave it as is, knowing it's a future task.
-router.get('/search', (req, res) => {
-    res.status(501).json({ error: 'Search not implemented for IPC bridge yet.' });
 });
 
 module.exports = router; 
