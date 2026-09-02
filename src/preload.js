@@ -96,6 +96,8 @@ contextBridge.exposeInMainWorld('api', {
     removeOnAuthFailed: (callback) => ipcRenderer.removeListener('auth-failed', callback),
     onForceShowApiKeyHeader: (callback) => ipcRenderer.on('force-show-apikey-header', callback),
     removeOnForceShowApiKeyHeader: (callback) => ipcRenderer.removeListener('force-show-apikey-header', callback),
+    onForceShowAccountHeader: (callback) => ipcRenderer.on('force-show-account-header', callback),
+    removeOnForceShowAccountHeader: (callback) => ipcRenderer.removeListener('force-show-account-header', callback),
   },
 
   // src/ui/app/MainHeader.js
@@ -206,16 +208,41 @@ contextBridge.exposeInMainWorld('api', {
     removeAllSummaryStreamListeners: () => ipcRenderer.removeAllListeners('summary-stream')
   },
 
+  // Jornada de conta (cadastro, verificação, recuperação) — consumida pelas telas
+  // de conta: SignupHeader, LoginHeader, VerifyEmailHeader.
+  // Os mesmos métodos seguem disponíveis em `settingsView` (v4Login/v4Logout/
+  // v4GetState), que o SettingsView já consome — aquela interface não muda.
+  //
+  // Todos devolvem { success } e, no erro, { code, error }: `code` é estável para a
+  // UI decidir o campo a destacar, e `error` já vem em pt-BR para exibir direto.
+  v4Auth: {
+    createAccount: (email, name, password) => ipcRenderer.invoke('v4auth:createAccount', { email, name, password }),
+    login: (email, password) => ipcRenderer.invoke('v4auth:login', { email, password }),
+    logout: () => ipcRenderer.invoke('v4auth:logout'),
+    getState: () => ipcRenderer.invoke('v4auth:getState'),
+    sendVerification: () => ipcRenderer.invoke('v4auth:sendVerification'),
+    sendRecovery: (email) => ipcRenderer.invoke('v4auth:sendRecovery', { email }),
+    completeRecovery: (userId, secret, newPassword) => ipcRenderer.invoke('v4auth:completeRecovery', { userId, secret, newPassword }),
+    // Deep link pickleglass://recovery?userId=&secret= — a página de recuperação
+    // devolve o usuário ao app e a UI abre a tela de nova senha.
+    onRecoveryLink: (callback) => ipcRenderer.on('v4auth:recovery-link', callback),
+    removeOnRecoveryLink: (callback) => ipcRenderer.removeListener('v4auth:recovery-link', callback),
+  },
+
   // src/ui/settings/SettingsView.js
   settingsView: {
     // User & Auth
     getCurrentUser: () => ipcRenderer.invoke('get-current-user'),
     openPersonalizePage: () => ipcRenderer.invoke('open-personalize-page'),
 
-    // V4 Auth (Appwrite) - login dos closers
+    // V4 Auth (Appwrite) - jornada de conta dos closers
     v4Login: (email, password) => ipcRenderer.invoke('v4auth:login', { email, password }),
     v4Logout: () => ipcRenderer.invoke('v4auth:logout'),
     v4GetState: () => ipcRenderer.invoke('v4auth:getState'),
+    // Leva a pessoa para a tela de conta na janela flutuante ('signup' | 'login').
+    v4ShowAccountScreen: (screen) => ipcRenderer.invoke('v4auth:showAccountScreen', { screen }),
+    // A jornada completa (cadastro, verificação, recuperação) fica no namespace
+    // `v4Auth`, no topo deste arquivo.
 
     // Model & Provider Management
     getModelSettings: () => ipcRenderer.invoke('settings:get-model-settings'), // Facade call

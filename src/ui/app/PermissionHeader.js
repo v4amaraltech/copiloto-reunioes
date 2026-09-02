@@ -118,6 +118,16 @@ export class PermissionHeader extends LitElement {
             line-height: 1.3;
         }
 
+        /* O porquê vem antes do pedido: quem entende para que serve, libera. */
+        .why {
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 11px;
+            font-weight: 400;
+            text-align: center;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+
         .permission-status {
             display: flex;
             align-items: center;
@@ -512,7 +522,12 @@ export class PermissionHeader extends LitElement {
     render() {
         const isKeychainRequired = this.userMode === 'firebase';
         const needRestart = this.screenRequested && this.screenGranted !== 'granted';
-        const containerHeight = (isKeychainRequired ? 316 : 256) + (needRestart ? 46 : 0);
+        const keychainOkForHeight = !isKeychainRequired || this.keychainGranted === 'granted';
+        const showWhy =
+            !(this.microphoneGranted === 'granted' && this.screenGranted === 'granted' && keychainOkForHeight);
+        // A linha do porquê ocupa duas linhas de texto: sem somar aqui, o conteúdo
+        // fica cortado (a altura do container é fixada em pixels).
+        const containerHeight = (isKeychainRequired ? 316 : 256) + (needRestart ? 46 : 0) + (showWhy ? 32 : 0);
         const keychainOk = !isKeychainRequired || this.keychainGranted === 'granted';
         const allGranted = this.microphoneGranted === 'granted' && this.screenGranted === 'granted' && keychainOk;
 
@@ -528,8 +543,11 @@ export class PermissionHeader extends LitElement {
 
                 <div class="form-content ${allGranted ? 'all-granted' : ''}">
                     ${!allGranted ? html`
+                        <div class="why">
+                            O copiloto precisa ouvir a call e ver sua tela para sugerir o próximo passo.
+                        </div>
                         <div class="subtitle">Libere o microfone e a gravação de tela${isKeychainRequired ? ' e o keychain' : ''} para continuar</div>
-                        
+
                         <div class="permission-status">
                             <div class="permission-item ${this.microphoneGranted === 'granted' ? 'granted' : ''}">
                                 ${this.microphoneGranted === 'granted' ? html`

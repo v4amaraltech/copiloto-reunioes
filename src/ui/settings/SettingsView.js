@@ -1042,6 +1042,15 @@ export class SettingsView extends LitElement {
         }
     }
 
+    /** Abre a tela de conta na janela flutuante; esta janela fecha sozinha. */
+    async handleV4ShowAccountScreen(screen) {
+        try {
+            await window.api.settingsView.v4ShowAccountScreen(screen);
+        } catch (err) {
+            this.v4LoginError = err.message;
+        }
+    }
+
     async handleV4Logout() {
         await window.api.settingsView.v4Logout();
         await this.loadV4AuthState();
@@ -1721,8 +1730,8 @@ export class SettingsView extends LitElement {
                           <button class="settings-button full-width" @click=${() => this.handleV4Logout()}>Sair da conta V4</button>
                       `
                     : html`
-                          <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Login V4 Amaral</div>
-                          <input type="email" id="v4-email" placeholder="e-mail corporativo" />
+                          <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Entrar na sua conta</div>
+                          <input type="email" id="v4-email" placeholder="e-mail" />
                           <input type="password" id="v4-password" placeholder="senha" />
                           ${this.v4LoginError
                               ? html`<div style="font-size: 10px; color: rgba(255,120,120,0.95); margin-bottom: 4px;">${this.v4LoginError}</div>`
@@ -1730,6 +1739,8 @@ export class SettingsView extends LitElement {
                           <button class="settings-button full-width" ?disabled=${this.v4LoggingIn} @click=${() => this.handleV4Login()}>
                               ${this.v4LoggingIn ? 'Entrando…' : 'Entrar'}
                           </button>
+                          <div style="font-size: 10px; opacity: 0.7; margin: 6px 0 4px;">Ainda não tem conta?</div>
+                          <button class="settings-button full-width" @click=${() => this.handleV4ShowAccountScreen('signup')}>Criar conta</button>
                       `}
             </div>
         `;

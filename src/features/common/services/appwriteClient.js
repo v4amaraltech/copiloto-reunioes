@@ -42,7 +42,9 @@ function interceptAuthErrors(c) {
 }
 
 function buildClient({ sessionSecret } = {}) {
-    const c = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID);
+    // pt-br: os e-mails que o Appwrite dispara (verificação, recuperação) saem
+    // no idioma do pedido, não do usuário — sem isso chegam em inglês.
+    const c = new Client().setEndpoint(APPWRITE_ENDPOINT).setProject(APPWRITE_PROJECT_ID).setLocale('pt-br');
     if (sessionSecret) {
         c.setSession(sessionSecret);
         interceptAuthErrors(c); // só sessões de usuário expiram

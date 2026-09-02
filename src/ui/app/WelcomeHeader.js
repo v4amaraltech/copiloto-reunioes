@@ -23,8 +23,8 @@ export class WelcomeHeader extends LitElement {
             flex-direction: column;
             justify-content: flex-start;
             align-items: flex-start;
-            gap: 32px;
-            display: inline-flex;
+            gap: 20px;
+            display: flex;
             -webkit-app-region: drag;
         }
         .close-button {
@@ -158,15 +158,42 @@ export class WelcomeHeader extends LitElement {
             cursor: pointer;
             -webkit-app-region: no-drag;
         }
+        /* Os dois caminhos da entrada: criar conta ou entrar. */
+        .choice {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .choice .action-button {
+            width: 100%;
+            padding: 11px 12px;
+            border-radius: 10px;
+        }
+        .choice .primary-choice {
+            background: rgba(238, 27, 46, 0.9);
+        }
+        .choice .ghost-choice {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: none;
+        }
+        .choice .ghost-choice:hover {
+            background: rgba(255, 255, 255, 0.16);
+        }
     `;
 
     static properties = {
         apiKeyCallback: { type: Function },
+        signupCallback: { type: Function },
+        loginCallback: { type: Function },
     };
 
     constructor() {
         super();
         this.apiKeyCallback = () => {};
+        this.signupCallback = () => {};
+        this.loginCallback = () => {};
         this.handleClose = this.handleClose.bind(this);
     }
 
@@ -186,24 +213,20 @@ export class WelcomeHeader extends LitElement {
             <div class="container">
                 <button class="close-button" @click=${this.handleClose}>×</button>
                 <div class="header-section">
-                    <div class="title">Copiloto de Reuniões V4 Amaral</div>
-                    <div class="subtitle">Sugestões em tempo real para fechar mais vendas</div>
+                    <div class="title">Seu copiloto de vendas</div>
+                    <div class="subtitle">Escuta a call, sugere o próximo passo e resume tudo no final.</div>
                 </div>
-                <div class="option-card">
-                    <div class="divider"></div>
-                    <div class="option-content">
-                        <div class="option-title">Configuração inicial (uma vez só)</div>
-                        <div class="option-description">
-                            1. Entre com sua conta V4 nas Configurações<br/>2. Cadastre a chave de transcrição (OpenAI)<br/>3. Clique em Ouvir quando a call começar
-                        </div>
-                    </div>
-                    <button class="action-button" @click=${this.apiKeyCallback}>
-                        <div class="button-text">Começar configuração</div>
+                <div class="choice">
+                    <button class="action-button primary-choice" @click=${() => this.signupCallback()}>
+                        <div class="button-text">Criar conta</div>
                         <div class="button-icon"><div class="arrow-icon"></div></div>
+                    </button>
+                    <button class="action-button ghost-choice" @click=${() => this.loginCallback()}>
+                        <div class="button-text">Já tenho conta</div>
                     </button>
                 </div>
                 <div class="footer">
-                    Uso interno V4 Amaral&Co — as sugestões são invisíveis no compartilhamento de tela
+                    As sugestões são invisíveis no compartilhamento de tela
                 </div>
             </div>
         `;

@@ -123,6 +123,24 @@ export class ApiKeyHeader extends LitElement {
             font-size: 14px;
             font-weight: 700;
         }
+        /* Por que a chave é necessária, com o caminho para consegui-la. */
+        .why-key {
+            width: 100%;
+            color: rgba(255, 255, 255, 0.62);
+            font-size: 11px;
+            line-height: 1.45;
+            margin-top: -2px;
+        }
+        .why-key-link {
+            -webkit-app-region: no-drag;
+            color: rgba(255, 138, 149, 1);
+            text-decoration: underline;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .why-key-link:hover {
+            color: rgba(238, 27, 46, 1);
+        }
         .section {
             width: 100%;
             display: flex;
@@ -1916,6 +1934,21 @@ export class ApiKeyHeader extends LitElement {
         }
     }
 
+    /**
+     * Leva direto à página onde a chave é criada, no provedor escolhido.
+     * Este é o passo onde o cliente para: mandar ele procurar sozinho é perdê-lo.
+     */
+    openApiKeyHelp() {
+        const pages = {
+            openai: 'https://platform.openai.com/api-keys',
+            gemini: 'https://aistudio.google.com/app/apikey',
+            google: 'https://aistudio.google.com/app/apikey',
+            anthropic: 'https://console.anthropic.com/settings/keys',
+        };
+        const url = pages[this.llmProvider] || pages.openai;
+        window.api?.common?.openExternal(url);
+    }
+
     render() {
         const llmNeedsApiKey = this.llmProvider !== 'ollama' && this.llmProvider !== 'whisper';
         const sttNeedsApiKey = this.sttProvider !== 'ollama' && this.sttProvider !== 'whisper';
@@ -1941,7 +1974,12 @@ export class ApiKeyHeader extends LitElement {
                         <i class="arrow-icon-left"></i>
                         <div class="back-button-text">Voltar</div>
                     </div>
-                    <div class="title">Use Personal API keys</div>
+                    <div class="title">Conectar a IA</div>
+                </div>
+
+                <div class="why-key">
+                    O copiloto usa sua própria conta de IA. Cole a chave e escolha o provedor.
+                    <span class="why-key-link" @click=${this.openApiKeyHelp}>Como conseguir uma chave</span>
                 </div>
 
                 <!-- LLM Section -->

@@ -538,7 +538,12 @@ async function handleCustomUrl(url) {
         const action = urlObj.hostname;
         const params = Object.fromEntries(urlObj.searchParams);
         
-        console.log('[Custom URL] Action:', action, 'Params:', params);
+        // O secret de recuperação viaja aqui — nunca logar os params dessa ação.
+        if (action === 'recovery') {
+            console.log('[Custom URL] Action: recovery');
+        } else {
+            console.log('[Custom URL] Action:', action, 'Params:', params);
+        }
 
         switch (action) {
             case 'login':
@@ -546,20 +551,51 @@ async function handleCustomUrl(url) {
                 // Login em nuvem removido: deep links de auth são ignorados.
                 console.warn('[Custom URL] Auth deep link ignored (local-only mode).');
                 break;
+            case 'recovery': {
+                // Bounce da página de recuperação de volta para o app: entrega o par
+                // userId+secret à UI, que pede a nova senha e chama v4CompleteRecovery.
+                const { windowPool } = require('./window/windowManager.js');
+                const header = windowPool.get('header');
+                if (header && !header.isDestroyed()) {
+                    if (header.isMinimized()) header.restore();
+                    header.focus();
+                }
+                windowPool.forEach(win => {
+                    if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+                        win.webContents.send('v4auth:recovery-link', {
+                            userId: params.userId || null,
+                            secret: params.secret || null,
+                        });
+                    }
+                });
+                break;
+            }
+            case 'recovery-done': {
+                // Botão "Abrir o Copiloto" da página de nova senha: traz o app para
+                // a frente e, se não há sessão, abre a tela de entrar.
+                const { windowPool } = require('./window/windowManager.js');
+                const header = windowPool.get('header');
+                if (header && !header.isDestroyed()) {
+                    if (header.isMinimized()) header.restore();
+                    header.show();
+                    header.focus();
+                    app.focus({ steal: true });
+                }
+                windowPool.forEach(win => {
+                    if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+                        win.webContents.send('force-show-account-header', { screen: 'login', reason: 'recovery-done' });
+                    }
+                });
+                break;
+            }
             case 'personalize':
                 handlePersonalizeFromUrl(params);
                 break;
             default:
-                const { windowPool } = require('./window/windowManager.js');
-                const header = windowPool.get('header');
-                if (header) {
-                    if (header.isMinimized()) header.restore();
-                    header.focus();
-                    
-                    const targetUrl = `http://localhost:${WEB_PORT}/${action}`;
-                    console.log(`[Custom URL] Navigating webview to: ${targetUrl}`);
-                    header.webContents.loadURL(targetUrl);
-                }
+                // Antes, qualquer ação desconhecida navegava a janela flutuante para
+                // http://localhost:PORT/<ação> — que não existe — e o app "travava"
+                // numa página em branco. Ação desconhecida agora só é ignorada.
+                console.warn('[Custom URL] Ação desconhecida ignorada:', action);
         }
 
     } catch (error) {

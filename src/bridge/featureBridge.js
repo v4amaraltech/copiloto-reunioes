@@ -112,11 +112,29 @@ module.exports = {
     ipcMain.handle('update-google-search-setting', async (event, enabled) => await listenService.handleUpdateGoogleSearchSetting(enabled));
     ipcMain.handle('listen:isSessionActive', async () => await listenService.isSessionActive());
 
-    // V4 Auth (Supabase) - login dos closers
+    // V4 Auth (Appwrite) - jornada de conta dos closers
     const v4AuthService = require('../features/common/services/v4AuthService');
     ipcMain.handle('v4auth:login', async (event, { email, password }) => await v4AuthService.login(email, password));
-    ipcMain.handle('v4auth:logout', async () => await v4AuthService.logout());
+    ipcMain.handle('v4auth:logout', async () => {
+      const result = await v4AuthService.logout();
+      // Sem conta, a flutuante volta para a jornada (criar conta / entrar).
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win && !win.isDestroyed()) win.webContents.send('force-show-account-header', { screen: 'welcome' });
+      });
+      return result;
+    });
     ipcMain.handle('v4auth:getState', async () => await v4AuthService.getState());
+    ipcMain.handle('v4auth:showAccountScreen', (event, { screen } = {}) => {
+      const target = screen === 'login' ? 'login' : 'signup';
+      BrowserWindow.getAllWindows().forEach(win => {
+        if (win && !win.isDestroyed()) win.webContents.send('force-show-account-header', { screen: target });
+      });
+      return { success: true };
+    });
+    ipcMain.handle('v4auth:createAccount', async (event, { email, name, password }) => await v4AuthService.createAccount(email, name, password));
+    ipcMain.handle('v4auth:sendVerification', async () => await v4AuthService.sendVerification());
+    ipcMain.handle('v4auth:sendRecovery', async (event, { email }) => await v4AuthService.sendRecovery(email));
+    ipcMain.handle('v4auth:completeRecovery', async (event, { userId, secret, newPassword }) => await v4AuthService.completeRecovery(userId, secret, newPassword));
     ipcMain.handle('listen:changeSession', async (event, listenButtonText) => {
       console.log('[FeatureBridge] listen:changeSession from mainheader', listenButtonText);
       try {
