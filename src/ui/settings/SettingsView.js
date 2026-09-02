@@ -2587,9 +2587,6 @@ export class SettingsView extends LitElement {
                 <button class="settings-button primary full-width" @click=${() => this.openAgentEditor(null)}>
                     <span>+ Novo agente</span>
                 </button>
-                <button class="settings-button full-width" @click=${this.handlePersonalize}>
-                    <span>Abrir no navegador</span>
-                </button>
             </div>
         `;
 
@@ -2652,9 +2649,6 @@ export class SettingsView extends LitElement {
                     ${this.agentDirty ? html`<span class="agent-dirty">· não salvo</span>` : ''}
                     ${this.agentStatus ? html`· ${this.agentStatus}` : ''}
                 </span>
-                <button class="preset-action" title="Editar a versão completa no navegador" @click=${this.handlePersonalize}>
-                    Abrir no navegador
-                </button>
                 <button
                     class="settings-button primary"
                     ?disabled=${this.agentSaving || !this.agentDirty}
