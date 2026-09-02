@@ -2162,15 +2162,6 @@ export class SettingsView extends LitElement {
         }
     }
 
-    async handlePersonalize() {
-        console.log('Personalize clicked');
-        try {
-            await window.api.settingsView.openPersonalizePage();
-        } catch (error) {
-            console.error('Failed to open personalize page:', error);
-        }
-    }
-
     async handleToggleInvisibility() {
         console.log('Toggle Invisibility clicked');
         this.isContentProtectionOn = await window.api.settingsView.toggleContentProtection();
@@ -2754,11 +2745,6 @@ export class SettingsView extends LitElement {
                 </div>
             </div>
 
-            <div class="buttons-section">
-                <button class="settings-button full-width" @click=${this.handlePersonalize}>
-                    <span>Abrir painel web</span>
-                </button>
-            </div>
         `;
 
         const panes = {
