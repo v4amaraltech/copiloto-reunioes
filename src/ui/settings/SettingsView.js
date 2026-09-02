@@ -793,6 +793,491 @@ export class SettingsView extends LitElement {
             color: rgba(255,255,255,0.4);
         }
             
+
+        /* ══════════════[ CARTÕES / BASE COMPARTILHADA ]══════════════ */
+        .card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 14px;
+            box-sizing: border-box;
+        }
+
+        .card-title {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+            letter-spacing: -0.2px;
+        }
+
+        .card-sub {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.45;
+            margin: 0;
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.42);
+            margin: 4px 0 -2px 2px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .field-label {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 2px;
+        }
+
+        .field-input {
+            width: 100%;
+            box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            padding: 9px 11px;
+            outline: none;
+            font-family: inherit;
+            cursor: text;
+            user-select: text;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .field-input::placeholder {
+            color: rgba(255, 255, 255, 0.32);
+        }
+
+        .field-input:focus,
+        .field-input:focus-visible {
+            border-color: rgba(238, 27, 46, 0.75);
+            box-shadow: 0 0 0 3px rgba(238, 27, 46, 0.18);
+        }
+
+        .settings-button:focus-visible,
+        .preset-action:focus-visible,
+        .link-button:focus-visible,
+        .switch:focus-visible,
+        .nav-item:focus-visible {
+            outline: 2px solid rgba(238, 27, 46, 0.85);
+            outline-offset: 2px;
+        }
+
+        .link-button {
+            align-self: flex-start;
+            background: none;
+            border: none;
+            padding: 2px 0;
+            font-size: 12px;
+            font-family: inherit;
+            color: rgba(255, 255, 255, 0.62);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            cursor: pointer;
+        }
+
+        .link-button:hover {
+            color: white;
+        }
+
+        .form-error {
+            font-size: 11.5px;
+            color: #ff9d9d;
+            background: rgba(238, 27, 46, 0.16);
+            border-radius: 9px;
+            padding: 8px 10px;
+            line-height: 1.4;
+        }
+
+        .form-notice {
+            font-size: 11.5px;
+            color: #a9e6bb;
+            background: rgba(60, 200, 110, 0.14);
+            border-radius: 9px;
+            padding: 8px 10px;
+            line-height: 1.4;
+        }
+
+        /* ══════════════[ ABA CONTA ]══════════════ */
+        .account-head {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+        }
+
+        .avatar {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: white;
+            background: rgba(238, 27, 46, 0.28);
+            border: 1px solid rgba(238, 27, 46, 0.6);
+        }
+
+        .account-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .account-email {
+            font-size: 13.5px;
+            font-weight: 500;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            user-select: text;
+        }
+
+        .badge {
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(60, 200, 110, 0.16);
+            color: #8fe0a8;
+        }
+
+        .badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #62d68a;
+        }
+
+        .signup-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .signup-row span {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ══════════════[ ABA MODELOS & API ]══════════════ */
+        .provider-card {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            padding: 13px 14px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 13px;
+            box-sizing: border-box;
+        }
+
+        .provider-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .provider-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .provider-logo {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .provider-logo svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .provider-name {
+            flex: 1;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .chip {
+            flex-shrink: 0;
+            font-size: 10.5px;
+            font-weight: 600;
+            padding: 3px 9px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.5);
+            white-space: nowrap;
+        }
+
+        .chip.ok {
+            background: rgba(60, 200, 110, 0.16);
+            color: #8fe0a8;
+        }
+
+        .chip.local {
+            background: rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.55);
+            margin-right: 2px;
+        }
+
+        .provider-note {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.48);
+            line-height: 1.45;
+            margin: -2px 0 0 0;
+        }
+
+        .provider-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .provider-form .field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .provider-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+
+        .provider-actions .settings-button {
+            min-width: 84px;
+            padding: 7px 14px;
+            font-size: 12px;
+            border-radius: 9px;
+        }
+
+        .model-picker {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .model-current {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .model-current-name {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .model-current-name.empty {
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 400;
+        }
+
+        .model-change {
+            flex-shrink: 0;
+            padding: 6px 12px;
+            font-size: 11.5px;
+            border-radius: 9px;
+        }
+
+        .model-list {
+            gap: 3px;
+            max-height: 150px;
+            background: rgba(0, 0, 0, 0.32);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 5px;
+            margin-top: 0;
+        }
+
+        .model-item {
+            padding: 7px 10px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        /* ══════════════[ ABA ATALHOS ]══════════════ */
+        .shortcut-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .shortcut-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 11px 4px;
+            font-size: 13px;
+            color: white;
+        }
+
+        .shortcut-row + .shortcut-row {
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .shortcut-label {
+            color: rgba(255, 255, 255, 0.85);
+        }
+
+        .kbd-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .kbd {
+            min-width: 24px;
+            height: 24px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.09);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-bottom-color: rgba(255, 255, 255, 0.28);
+            border-radius: 7px;
+        }
+
+        .kbd.none {
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.4);
+            background: transparent;
+            border-style: dashed;
+        }
+
+        /* ══════════════[ ABA GERAL ]══════════════ */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .toggle-row + .toggle-row {
+            padding-top: 13px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .toggle-text {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .toggle-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .toggle-desc {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.48);
+            line-height: 1.4;
+        }
+
+        .switch {
+            flex-shrink: 0;
+            width: 42px;
+            height: 24px;
+            padding: 0;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.09);
+            cursor: pointer;
+            position: relative;
+            transition: background 0.18s ease, border-color 0.18s ease;
+        }
+
+        .switch .switch-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.85);
+            transition: transform 0.18s ease, background 0.18s ease;
+        }
+
+        .switch.on {
+            background: rgba(238, 27, 46, 0.85);
+            border-color: rgba(238, 27, 46, 0.9);
+        }
+
+        .switch.on .switch-knob {
+            transform: translateX(18px);
+            background: white;
+        }
+
+        .switch[disabled] {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .window-move {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-move .settings-button {
+            flex: 1;
+            border-radius: 10px;
+        }
+
         /* ────────────────[ GLASS BYPASS ]─────────────── */
         :host-context(body.has-glass) {
             animation: none !important;
@@ -825,6 +1310,8 @@ export class SettingsView extends LitElement {
         v4Auth: { type: Object, state: true },
         v4LoginError: { type: String, state: true },
         v4LoggingIn: { type: Boolean, state: true },
+        v4RecoveryNotice: { type: String, state: true },
+        v4RecoverySending: { type: Boolean, state: true },
         isLoading: { type: Boolean, state: true },
         isContentProtectionOn: { type: Boolean, state: true },
         saving: { type: Boolean, state: true },
@@ -881,6 +1368,8 @@ export class SettingsView extends LitElement {
         this.presets = [];
         this.selectedPreset = null;
         this.showPresets = false;
+        this.v4RecoveryNotice = '';
+        this.v4RecoverySending = false;
         this.activeTab = 'agentes';
         this.agentsMode = 'list';
         this.agentDraftId = null;
@@ -1054,6 +1543,39 @@ export class SettingsView extends LitElement {
     async handleV4Logout() {
         await window.api.settingsView.v4Logout();
         await this.loadV4AuthState();
+    }
+
+    /** Envia o link de recuperação para o e-mail digitado no campo acima. */
+    async handleV4SendRecovery() {
+        const email = (this.shadowRoot.querySelector('#v4-email')?.value || '').trim();
+        this.v4RecoveryNotice = '';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            this.v4LoginError = 'Digite seu e-mail acima para receber o link de recuperação.';
+            this.requestUpdate();
+            return;
+        }
+        if (!window.api?.v4Auth?.sendRecovery) {
+            this.v4LoginError = 'Recuperação indisponível nesta versão. Atualize o aplicativo.';
+            this.requestUpdate();
+            return;
+        }
+        this.v4LoginError = '';
+        this.v4RecoverySending = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.v4Auth.sendRecovery(email);
+            if (result?.success) {
+                this.v4RecoveryNotice = `Enviamos um link para ${email}. Crie a nova senha por lá e volte aqui para entrar.`;
+            } else {
+                this.v4LoginError = result?.error || 'Não foi possível enviar o e-mail. Tente de novo.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao pedir recuperação:', error);
+            this.v4LoginError = 'Não foi possível enviar o e-mail. Tente de novo.';
+        } finally {
+            this.v4RecoverySending = false;
+            this.requestUpdate();
+        }
     }
 
     async handleSaveKey(provider) {
@@ -1452,16 +1974,16 @@ export class SettingsView extends LitElement {
 
     getMainShortcuts() {
         return [
-            { name: 'Show / Hide', accelerator: this.shortcuts.toggleVisibility },
-            { name: 'Ask Anything', accelerator: this.shortcuts.nextStep },
-            { name: 'Scroll Up Response', accelerator: this.shortcuts.scrollUp },
-            { name: 'Scroll Down Response', accelerator: this.shortcuts.scrollDown },
+            { name: 'Mostrar / ocultar', accelerator: this.shortcuts.toggleVisibility },
+            { name: 'Perguntar', accelerator: this.shortcuts.nextStep },
+            { name: 'Rolar resposta para cima', accelerator: this.shortcuts.scrollUp },
+            { name: 'Rolar resposta para baixo', accelerator: this.shortcuts.scrollDown },
         ];
     }
 
     renderShortcutKeys(accelerator) {
-        if (!accelerator) return html`N/A`;
-        
+        if (!accelerator) return html`<span class="kbd none">não definido</span>`;
+
         const keyMap = {
             'Cmd': '⌘', 'Command': '⌘', 'Ctrl': '⌃', 'Alt': '⌥', 'Shift': '⇧', 'Enter': '↵',
             'Up': '↑', 'Down': '↓', 'Left': '←', 'Right': '→'
@@ -1471,11 +1993,11 @@ export class SettingsView extends LitElement {
         if (accelerator.includes('↕')) {
             const keys = accelerator.replace('↕','').split('+');
             keys.push('↕');
-             return html`${keys.map(key => html`<span class="shortcut-key">${keyMap[key] || key}</span>`)}`;
+             return html`${keys.map(key => html`<span class="kbd">${keyMap[key] || key}</span>`)}`;
         }
 
         const keys = accelerator.split('+');
-        return html`${keys.map(key => html`<span class="shortcut-key">${keyMap[key] || key}</span>`)}`;
+        return html`${keys.map(key => html`<span class="kbd">${keyMap[key] || key}</span>`)}`;
     }
 
     togglePresets() {
@@ -1720,105 +2242,173 @@ export class SettingsView extends LitElement {
             `;
         }
 
-        const v4AuthHTML = html`
-            <div class="api-key-section">
-                ${this.v4Auth?.loggedIn
-                    ? html`
-                          <div style="font-size: 11px; color: rgba(120,220,140,0.95); margin-bottom: 4px;">
-                              Conta V4: ${this.v4Auth.email}
+        const initials = (email) => {
+            const user = (email || '').split('@')[0] || '';
+            const parts = user.split(/[._\-+]/).filter(Boolean);
+            const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : user.slice(0, 2);
+            return (letters || '?').toUpperCase();
+        };
+
+        const v4AuthHTML = this.v4Auth?.loggedIn
+            ? html`
+                  <div class="card">
+                      <div class="account-head">
+                          <div class="avatar">${initials(this.v4Auth.email)}</div>
+                          <div class="account-meta">
+                              <span class="account-email">${this.v4Auth.email}</span>
+                              <span class="badge"><span class="dot"></span>Conectado</span>
                           </div>
-                          <button class="settings-button full-width" @click=${() => this.handleV4Logout()}>Sair da conta V4</button>
-                      `
-                    : html`
-                          <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px;">Entrar na sua conta</div>
-                          <input type="email" id="v4-email" placeholder="e-mail" />
-                          <input type="password" id="v4-password" placeholder="senha" />
-                          ${this.v4LoginError
-                              ? html`<div style="font-size: 10px; color: rgba(255,120,120,0.95); margin-bottom: 4px;">${this.v4LoginError}</div>`
-                              : ''}
-                          <button class="settings-button full-width" ?disabled=${this.v4LoggingIn} @click=${() => this.handleV4Login()}>
-                              ${this.v4LoggingIn ? 'Entrando…' : 'Entrar'}
+                      </div>
+                      <button class="settings-button danger full-width" @click=${() => this.handleV4Logout()}>
+                          Sair da conta
+                      </button>
+                  </div>
+              `
+            : html`
+                  <div class="card">
+                      <h3 class="card-title">Entrar na sua conta</h3>
+                      <div class="field">
+                          <span class="field-label">E-mail</span>
+                          <input class="field-input" type="email" id="v4-email" placeholder="voce@empresa.com"
+                                 @input=${() => { if (this.v4LoginError || this.v4RecoveryNotice) { this.v4LoginError = ''; this.v4RecoveryNotice = ''; this.requestUpdate(); } }} />
+                      </div>
+                      <div class="field">
+                          <span class="field-label">Senha</span>
+                          <input class="field-input" type="password" id="v4-password" placeholder="Sua senha"
+                                 @keydown=${e => { if (e.key === 'Enter') this.handleV4Login(); }} />
+                      </div>
+                      ${this.v4LoginError ? html`<div class="form-error">${this.v4LoginError}</div>` : ''}
+                      ${this.v4RecoveryNotice ? html`<div class="form-notice">${this.v4RecoveryNotice}</div>` : ''}
+                      <button class="settings-button primary full-width" ?disabled=${this.v4LoggingIn} @click=${() => this.handleV4Login()}>
+                          ${this.v4LoggingIn ? 'Entrando…' : 'Entrar'}
+                      </button>
+                      <button class="link-button" ?disabled=${this.v4RecoverySending} @click=${() => this.handleV4SendRecovery()}>
+                          ${this.v4RecoverySending ? 'Enviando…' : 'Esqueci minha senha'}
+                      </button>
+                  </div>
+                  <div class="card">
+                      <div class="signup-row">
+                          <span>Ainda não tem conta?</span>
+                          <button class="settings-button" @click=${() => this.handleV4ShowAccountScreen('signup')}>
+                              Criar conta
                           </button>
-                          <div style="font-size: 10px; opacity: 0.7; margin: 6px 0 4px;">Ainda não tem conta?</div>
-                          <button class="settings-button full-width" @click=${() => this.handleV4ShowAccountScreen('signup')}>Criar conta</button>
-                      `}
-            </div>
+                      </div>
+                  </div>
+              `;
+
+        // Marcas simplificadas, monocromáticas e inline — sem assets externos.
+        const providerLogos = {
+            openai: svg`<g fill="none" stroke="currentColor" stroke-width="1.5">
+                <ellipse cx="12" cy="12" rx="3.4" ry="9"/>
+                <ellipse cx="12" cy="12" rx="3.4" ry="9" transform="rotate(60 12 12)"/>
+                <ellipse cx="12" cy="12" rx="3.4" ry="9" transform="rotate(120 12 12)"/>
+            </g>`,
+            gemini: svg`<path fill="currentColor" d="M12 2c.45 4.9 5.1 9.55 10 10-4.9.45-9.55 5.1-10 10-.45-4.9-5.1-9.55-10-10 4.9-.45 9.55-5.1 10-10z"/>`,
+            anthropic: svg`<path fill="currentColor" fill-rule="evenodd" d="M13.05 3.6h-2.1L4.2 20.4h3.5l1.4-3.65h5.8l1.4 3.65h3.5L13.05 3.6zM10.2 13.75L12 9.05l1.8 4.7h-3.6z"/>`,
+            deepgram: svg`<g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+                <path d="M6.5 4.2h4.6a7.8 7.8 0 0 1 0 15.6H6.5V4.2z"/>
+                <path d="M10.4 9.4v5.2M13.6 10.6v2.8"/>
+            </g>`,
+            ollama: svg`<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8.4 6.4c-.5-1.6-.3-3 .6-3.2.9-.2 1.8.9 2.1 2.5M15.6 6.4c.5-1.6.3-3-.6-3.2-.9-.2-1.8.9-2.1 2.5"/>
+                <path d="M12 5.4c3 0 5 2.3 5 5.3 0 1.9-.7 2.9-.7 4.3 0 1.4.8 2 .8 3.4v2.2H6.9v-2.2c0-1.4.8-2 .8-3.4 0-1.4-.7-2.4-.7-4.3 0-3 2-5.3 5-5.3z"/>
+                <path d="M10.3 11.2h.01M13.7 11.2h.01"/>
+            </g>`,
+            whisper: svg`<g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+                <path d="M3.5 12h.6M7.2 8.4v7.2M12 4.8v14.4M16.8 8.4v7.2M20.5 12h-.6"/>
+            </g>`,
+        };
+        const fallbackLogo = svg`<g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8.5" cy="12" r="3.5"/><path d="M12 12h8M17.5 12v3M20 12v2.5"/>
+        </g>`;
+        const providerLogo = (id) => html`
+            <span class="provider-logo">
+                <svg viewBox="0 0 24 24">${providerLogos[id] || fallbackLogo}</svg>
+            </span>
         `;
+        const cleanProviderName = (name) => (name || '').replace(/\s*\((Local|Local STT)\)\s*$/i, '').trim();
 
         const apiKeyManagementHTML = html`
-            <div class="api-key-section">
+            <div class="provider-list">
                 ${Object.entries(this.providerConfig)
                     .map(([id, config]) => {
+                        const name = cleanProviderName(config.name);
+
                         if (id === 'ollama') {
-                            // Special UI for Ollama
+                            const running = this.ollamaStatus.installed && this.ollamaStatus.running;
                             return html`
-                                <div class="provider-key-group">
-                                    <label>${config.name} (Local)</label>
-                                    ${this.ollamaStatus.installed && this.ollamaStatus.running ? html`
-                                        <div style="padding: 8px; background: rgba(0,255,0,0.1); border-radius: 4px; font-size: 11px; color: rgba(0,255,0,0.8);">
-                                            ✓ Ollama is running
-                                        </div>
-                                        <button class="settings-button full-width danger" @click=${this.handleOllamaShutdown}>
-                                            Stop Ollama Service
-                                        </button>
-                                    ` : this.ollamaStatus.installed ? html`
-                                        <div style="padding: 8px; background: rgba(255,200,0,0.1); border-radius: 4px; font-size: 11px; color: rgba(255,200,0,0.8);">
-                                            ⚠ Ollama installed but not running
-                                        </div>
-                                        <button class="settings-button full-width" @click=${() => this.handleSaveKey(id)}>
-                                            Start Ollama
-                                        </button>
-                                    ` : html`
-                                        <div style="padding: 8px; background: rgba(255,100,100,0.1); border-radius: 4px; font-size: 11px; color: rgba(255,100,100,0.8);">
-                                            ✗ Ollama not installed
-                                        </div>
-                                        <button class="settings-button full-width" @click=${() => this.handleSaveKey(id)}>
-                                            Install & Setup Ollama
-                                        </button>
-                                    `}
+                                <div class="provider-card">
+                                    <div class="provider-head">
+                                        ${providerLogo(id)}
+                                        <span class="provider-name">${name}</span>
+                                        <span class="chip local">Local</span>
+                                        <span class="chip ${running ? 'ok' : ''}">${running ? 'Ativado' : 'Desativado'}</span>
+                                    </div>
+                                    <p class="provider-note">
+                                        ${running
+                                            ? 'Rodando na sua máquina, sem enviar dados para fora.'
+                                            : this.ollamaStatus.installed
+                                                ? 'Instalado, mas o serviço está parado.'
+                                                : 'Ainda não instalado. Ativar faz a instalação automática.'}
+                                    </p>
+                                    <div class="provider-actions">
+                                        ${running
+                                            ? html`<button class="settings-button danger" @click=${this.handleOllamaShutdown}>Desativar</button>`
+                                            : html`<button class="settings-button" @click=${() => this.handleSaveKey(id)}>Ativar</button>`}
+                                    </div>
                                 </div>
                             `;
                         }
-                        
+
                         if (id === 'whisper') {
-                            // Simplified UI for Whisper without model selection
+                            const enabled = this.apiKeys[id] === 'local';
                             return html`
-                                <div class="provider-key-group">
-                                    <label>${config.name} (Local STT)</label>
-                                    ${this.apiKeys[id] === 'local' ? html`
-                                        <div style="padding: 8px; background: rgba(0,255,0,0.1); border-radius: 4px; font-size: 11px; color: rgba(0,255,0,0.8); margin-bottom: 8px;">
-                                            ✓ Whisper is enabled
-                                        </div>
-                                        <button class="settings-button full-width danger" @click=${() => this.handleClearKey(id)}>
-                                            Disable Whisper
-                                        </button>
-                                    ` : html`
-                                        <button class="settings-button full-width" @click=${() => this.handleSaveKey(id)}>
-                                            Enable Whisper STT
-                                        </button>
-                                    `}
+                                <div class="provider-card">
+                                    <div class="provider-head">
+                                        ${providerLogo(id)}
+                                        <span class="provider-name">${name}</span>
+                                        <span class="chip local">Local</span>
+                                        <span class="chip ${enabled ? 'ok' : ''}">${enabled ? 'Ativado' : 'Desativado'}</span>
+                                    </div>
+                                    <p class="provider-note">
+                                        Transcrição feita no seu computador, sem chave de API.
+                                    </p>
+                                    <div class="provider-actions">
+                                        ${enabled
+                                            ? html`<button class="settings-button danger" @click=${() => this.handleClearKey(id)}>Desativar</button>`
+                                            : html`<button class="settings-button" @click=${() => this.handleSaveKey(id)}>Ativar</button>`}
+                                    </div>
                                 </div>
                             `;
                         }
-                        
-                        // Regular providers
+
+                        const configured = !!this.apiKeys[id];
                         return html`
-                        <div class="provider-key-group">
-                            <label for="key-input-${id}">${config.name} API Key</label>
-                            <input type="password" id="key-input-${id}"
-                                placeholder=${`Enter ${config.name} API Key`}
-                                .value=${this.apiKeys[id] || ''}
-                            >
-                            <div class="key-buttons">
-                               <button class="settings-button" @click=${() => this.handleSaveKey(id)} >Save</button>
-                               <button class="settings-button danger" @click=${() => this.handleClearKey(id)} }>Clear</button>
+                            <div class="provider-card">
+                                <div class="provider-head">
+                                    ${providerLogo(id)}
+                                    <span class="provider-name">${name}</span>
+                                    <span class="chip ${configured ? 'ok' : ''}">${configured ? 'Configurada' : 'Não configurada'}</span>
+                                </div>
+                                <div class="provider-form">
+                                    <div class="field">
+                                        <span class="field-label">Chave de API</span>
+                                        <input class="field-input" type="password" id="key-input-${id}"
+                                            placeholder=${`Cole a chave da ${name}`}
+                                            .value=${this.apiKeys[id] || ''}
+                                        >
+                                    </div>
+                                    <div class="provider-actions">
+                                        <button class="settings-button" @click=${() => this.handleSaveKey(id)}>Salvar</button>
+                                        <button class="settings-button danger" @click=${() => this.handleClearKey(id)}>Limpar</button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
                         `;
                     })}
             </div>
         `;
-        
+
         const getModelName = (type, id) => {
             const models = type === 'llm' ? this.availableLlmModels : this.availableSttModels;
             const model = models.find(m => m.id === id);
@@ -1826,12 +2416,17 @@ export class SettingsView extends LitElement {
         }
 
         const modelSelectionHTML = html`
-            <div class="model-selection-section">
-                <div class="model-select-group">
-                    <label>LLM Model: <strong>${getModelName('llm', this.selectedLlm) || 'Not Set'}</strong></label>
-                    <button class="settings-button full-width" @click=${() => this.toggleModelList('llm')} ?disabled=${this.saving || this.availableLlmModels.length === 0}>
-                        Change LLM Model
-                    </button>
+            <div class="card">
+                <div class="model-picker">
+                    <span class="field-label">Modelo de IA</span>
+                    <div class="model-current">
+                        <span class="model-current-name ${this.selectedLlm ? '' : 'empty'}">
+                            ${getModelName('llm', this.selectedLlm) || 'Nenhum definido'}
+                        </span>
+                        <button class="settings-button model-change" @click=${() => this.toggleModelList('llm')} ?disabled=${this.saving || this.availableLlmModels.length === 0}>
+                            ${this.isLlmListVisible ? 'Fechar' : 'Alterar'}
+                        </button>
+                    </div>
                     ${this.isLlmListVisible ? html`
                         <div class="model-list">
                             ${this.availableLlmModels.map(model => {
@@ -1839,20 +2434,20 @@ export class SettingsView extends LitElement {
                                 const ollamaModel = isOllama ? this.ollamaModels.find(m => m.name === model.id) : null;
                                 const isInstalling = this.installingModels[model.id] !== undefined;
                                 const installProgress = this.installingModels[model.id] || 0;
-                                
+
                                 return html`
-                                    <div class="model-item ${this.selectedLlm === model.id ? 'selected' : ''}" 
+                                    <div class="model-item ${this.selectedLlm === model.id ? 'selected' : ''}"
                                          @click=${() => this.selectModel('llm', model.id)}>
                                         <span>${model.name}</span>
                                         ${isOllama ? html`
                                             ${isInstalling ? html`
                                                 <div class="install-progress">
                                                     <div class="install-progress-bar" style="width: ${installProgress}%"></div>
-                                </div>
+                                                </div>
                                             ` : ollamaModel?.installed ? html`
-                                                <span class="model-status installed">✓ Installed</span>
+                                                <span class="model-status installed">✓ Instalado</span>
                                             ` : html`
-                                                <span class="model-status not-installed">Click to install</span>
+                                                <span class="model-status not-installed">Clique para instalar</span>
                                             `}
                                         ` : ''}
                                     </div>
@@ -1861,23 +2456,29 @@ export class SettingsView extends LitElement {
                         </div>
                     ` : ''}
                 </div>
-                <div class="model-select-group">
-                    <label>STT Model: <strong>${getModelName('stt', this.selectedStt) || 'Not Set'}</strong></label>
-                    <button class="settings-button full-width" @click=${() => this.toggleModelList('stt')} ?disabled=${this.saving || this.availableSttModels.length === 0}>
-                        Change STT Model
-                    </button>
+
+                <div class="model-picker">
+                    <span class="field-label">Transcrição</span>
+                    <div class="model-current">
+                        <span class="model-current-name ${this.selectedStt ? '' : 'empty'}">
+                            ${getModelName('stt', this.selectedStt) || 'Nenhum definido'}
+                        </span>
+                        <button class="settings-button model-change" @click=${() => this.toggleModelList('stt')} ?disabled=${this.saving || this.availableSttModels.length === 0}>
+                            ${this.isSttListVisible ? 'Fechar' : 'Alterar'}
+                        </button>
+                    </div>
                     ${this.isSttListVisible ? html`
                         <div class="model-list">
                             ${this.availableSttModels.map(model => {
                                 const isWhisper = this.getProviderForModel('stt', model.id) === 'whisper';
-                                const whisperModel = isWhisper && this.providerConfig?.whisper?.sttModels 
-                                    ? this.providerConfig.whisper.sttModels.find(m => m.id === model.id) 
+                                const whisperModel = isWhisper && this.providerConfig?.whisper?.sttModels
+                                    ? this.providerConfig.whisper.sttModels.find(m => m.id === model.id)
                                     : null;
                                 const isInstalling = this.installingModels[model.id] !== undefined;
                                 const installProgress = this.installingModels[model.id] || 0;
-                                
+
                                 return html`
-                                    <div class="model-item ${this.selectedStt === model.id ? 'selected' : ''}" 
+                                    <div class="model-item ${this.selectedStt === model.id ? 'selected' : ''}"
                                          @click=${() => this.selectModel('stt', model.id)}>
                                         <span>${model.name}</span>
                                         ${isWhisper ? html`
@@ -1886,9 +2487,9 @@ export class SettingsView extends LitElement {
                                                     <div class="install-progress-bar" style="width: ${installProgress}%"></div>
                                                 </div>
                                             ` : whisperModel?.installed ? html`
-                                                <span class="model-status installed">✓ Installed</span>
+                                                <span class="model-status installed">✓ Instalado</span>
                                             ` : html`
-                                                <span class="model-status not-installed">Not Installed</span>
+                                                <span class="model-status not-installed">Não instalado</span>
                                             `}
                                         ` : ''}
                                     </div>
@@ -2068,26 +2669,39 @@ export class SettingsView extends LitElement {
 
         const contaPane = html`
             <h2 class="content-title">Conta</h2>
+            <p class="content-hint">
+                Sua conta V4 sincroniza agentes e histórico entre o app e o painel web.
+            </p>
             ${v4AuthHTML}
         `;
 
         const modelosPane = html`
-            <h2 class="content-title">Modelos & API</h2>
+            <h2 class="content-title">Modelos &amp; API</h2>
+            <p class="content-hint">
+                Conecte pelo menos um provedor de IA e um de transcrição para o copiloto funcionar na call.
+            </p>
+            <div class="section-label">Provedores</div>
             ${apiKeyManagementHTML}
+            <div class="section-label">Modelos em uso</div>
             ${modelSelectionHTML}
         `;
 
         const atalhosPane = html`
             <h2 class="content-title">Atalhos</h2>
-            <div class="shortcuts-section">
-                ${this.getMainShortcuts().map(shortcut => html`
-                    <div class="shortcut-item">
-                        <span class="shortcut-name">${shortcut.name}</span>
-                        <div class="shortcut-keys">
-                            ${this.renderShortcutKeys(shortcut.accelerator)}
+            <p class="content-hint">
+                Teclas de atalho globais — funcionam mesmo com o Copiloto em segundo plano.
+            </p>
+            <div class="card">
+                <div class="shortcut-list">
+                    ${this.getMainShortcuts().map(shortcut => html`
+                        <div class="shortcut-row">
+                            <span class="shortcut-label">${shortcut.name}</span>
+                            <div class="kbd-group">
+                                ${this.renderShortcutKeys(shortcut.accelerator)}
+                            </div>
                         </div>
-                    </div>
-                `)}
+                    `)}
+                </div>
             </div>
             <div class="buttons-section">
                 <button class="settings-button full-width" @click=${this.openShortcutEditor}>
@@ -2098,21 +2712,55 @@ export class SettingsView extends LitElement {
 
         const geralPane = html`
             <h2 class="content-title">Geral</h2>
-            <div class="buttons-section">
-                <button class="settings-button full-width" @click=${this.handleToggleAutoUpdate} ?disabled=${this.autoUpdateLoading}>
-                    <span>Atualizações automáticas: ${this.autoUpdateEnabled ? 'Ativadas' : 'Desativadas'}</span>
-                </button>
-                <button class="settings-button full-width" @click=${this.handleToggleInvisibility}>
-                    <span>${this.isContentProtectionOn ? 'Desativar invisibilidade' : 'Ativar invisibilidade'}</span>
-                </button>
-                <div class="move-buttons">
-                    <button class="settings-button half-width" @click=${this.handleMoveLeft}>
+            <p class="content-hint">
+                Ajustes do aplicativo e da janela flutuante.
+            </p>
+            <div class="card">
+                <div class="toggle-row">
+                    <div class="toggle-text">
+                        <span class="toggle-title">Atualizações automáticas</span>
+                        <span class="toggle-desc">Baixa e instala novas versões do Copiloto sozinho.</span>
+                    </div>
+                    <button
+                        class="switch ${this.autoUpdateEnabled ? 'on' : ''}"
+                        role="switch"
+                        aria-checked=${this.autoUpdateEnabled ? 'true' : 'false'}
+                        aria-label="Atualizações automáticas"
+                        ?disabled=${this.autoUpdateLoading}
+                        @click=${this.handleToggleAutoUpdate}
+                    ><span class="switch-knob"></span></button>
+                </div>
+                <div class="toggle-row">
+                    <div class="toggle-text">
+                        <span class="toggle-title">Modo invisível</span>
+                        <span class="toggle-desc">Esconde a janela de compartilhamentos de tela e gravações.</span>
+                    </div>
+                    <button
+                        class="switch ${this.isContentProtectionOn ? 'on' : ''}"
+                        role="switch"
+                        aria-checked=${this.isContentProtectionOn ? 'true' : 'false'}
+                        aria-label="Modo invisível"
+                        @click=${this.handleToggleInvisibility}
+                    ><span class="switch-knob"></span></button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="toggle-text">
+                    <span class="toggle-title">Posição da janela</span>
+                    <span class="toggle-desc">Move a janela flutuante um passo para cada lado.</span>
+                </div>
+                <div class="window-move">
+                    <button class="settings-button" @click=${this.handleMoveLeft}>
                         <span>← Mover</span>
                     </button>
-                    <button class="settings-button half-width" @click=${this.handleMoveRight}>
+                    <button class="settings-button" @click=${this.handleMoveRight}>
                         <span>Mover →</span>
                     </button>
                 </div>
+            </div>
+
+            <div class="buttons-section">
                 <button class="settings-button full-width" @click=${this.handlePersonalize}>
                     <span>Abrir painel web</span>
                 </button>
