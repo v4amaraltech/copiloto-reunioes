@@ -13,6 +13,7 @@ const getWindowPool = () => {
 };
 
 const sessionRepository = require('../common/repositories/session');
+const sttRepository = require('../listen/stt/repositories');
 const askRepository = require('./repositories');
 const { getSystemPrompt } = require('../common/prompts/promptBuilder');
 const path = require('node:path');
@@ -34,6 +35,13 @@ try {
     sharp = null;
 }
 let lastScreenshot = null;
+
+// Conversa com reunião passada: teto de transcrição enviada por pergunta. ~120k chars
+// (≈34k tokens em pt-BR) cobre com folga a maior call medida — 31 min / 32k chars
+// (docs/VINCULO-REUNIAO.md, B.3). Acima disso mandamos começo + fim, com aviso.
+const MAX_TRANSCRIPT_CHARS = 120000;
+// Turnos anteriores da conversa reenviados como contexto.
+const HISTORY_TURNS = 10;
 
 // Política V4 Amaral: além do áudio, o Perguntar envia uma captura da tela
 // como contexto (reativado a pedido — antes era áudio-somente).
@@ -133,6 +141,9 @@ async function captureScreenshot(options = {}) {
 class AskService {
     constructor() {
         this.abortController = null;
+        // Um controller por sessão: a conversa sobre uma reunião passada é independente
+        // do Ask ao vivo e das conversas sobre outras reuniões.
+        this.sessionAbortControllers = new Map();
         this.state = {
             isVisible: false,
             isLoading: false,
@@ -443,6 +454,254 @@ class AskService {
                 }
             }
         }
+    }
+
+    // ---------------------------------------------------------------------------
+    // Conversa com uma reunião JÁ ENCERRADA (fatia 2 de docs/VINCULO-REUNIAO.md).
+    //
+    // Diferenças em relação ao Ask ao vivo (sendMessage):
+    //   - não cria sessão 'ask': grava as ai_messages na PRÓPRIA sessão da reunião;
+    //   - não tira screenshot (a tela de agora não tem relação com a call de ontem);
+    //   - carrega a transcrição INTEIRA do banco, não a janela de 30 falas do renderer;
+    //   - o stream vai para o canal 'sessions:ask-stream', sempre com o sessionId.
+    // ---------------------------------------------------------------------------
+
+    /** Emite um evento de stream da conversa de sessão para todas as janelas abertas. */
+    _emitSessionStream(payload) {
+        const pool = getWindowPool();
+        const janelas = pool ? Array.from(pool.values()) : [];
+        for (const janela of janelas) {
+            if (janela && !janela.isDestroyed()) {
+                janela.webContents.send('sessions:ask-stream', payload);
+            }
+        }
+    }
+
+    /**
+     * Formata as falas como "speaker: texto" e, se passar do teto, manda começo e fim
+     * com um aviso no meio. Acima de ~120k chars (≈34k tokens em pt-BR) não vale
+     * reenviar tudo a cada pergunta — e a doc mede que nenhuma call real chega perto.
+     */
+    _formatTranscriptForPrompt(transcripts, maxChars = MAX_TRANSCRIPT_CHARS) {
+        const linhas = transcripts
+            .map(t => `${(t.speaker || 'fala').toLowerCase()}: ${(t.text || '').trim()}`)
+            .filter(linha => linha.length > 6);
+
+        const texto = linhas.join('\n');
+        if (texto.length <= maxChars) {
+            return { texto, truncada: false };
+        }
+
+        const metade = Math.floor(maxChars / 2);
+        const inicio = texto.slice(0, metade);
+        const fim = texto.slice(-metade);
+        const cortados = texto.length - inicio.length - fim.length;
+        const aviso = `\n\n[... ${cortados} caracteres do MEIO desta transcrição foram omitidos por limite de tamanho. Você tem o começo e o fim da reunião, mas não o trecho central ...]\n\n`;
+
+        return { texto: inicio + aviso + fim, truncada: true, cortados };
+    }
+
+    /** Contexto imutável da reunião: metadados + transcrição. Vai dentro do system prompt. */
+    _buildSessionContext(session, transcriptBlock) {
+        const formatarData = (ts) => {
+            if (!ts) return 'data desconhecida';
+            return new Date(ts * 1000).toLocaleString('pt-BR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+            });
+        };
+
+        const duracao = session.started_at && session.ended_at
+            ? `${Math.max(1, Math.round((session.ended_at - session.started_at) / 60))} minutos`
+            : 'duração desconhecida';
+
+        const cabecalho = [
+            `REUNIÃO (já encerrada)`,
+            `Título: ${session.title || 'sem título'}`,
+            `Quando: ${formatarData(session.started_at)}`,
+            `Duração: ${duracao}`,
+            transcriptBlock.truncada ? `Atenção: a transcrição abaixo está TRUNCADA no meio.` : null,
+        ].filter(Boolean).join('\n');
+
+        return `${cabecalho}\n\nTRANSCRIÇÃO COMPLETA (me = closer da V4, them = lead):\n-----\n${transcriptBlock.texto}\n-----`;
+    }
+
+    /**
+     * Responde uma pergunta sobre uma reunião passada.
+     *
+     * @param {{sessionId: string, question: string}} params
+     * @returns {Promise<{success: boolean, response?: string, error?: string}>}
+     */
+    async askAboutSession({ sessionId, question } = {}) {
+        const pergunta = (question || '').trim();
+
+        if (!sessionId) {
+            return { success: false, error: 'Sessão não informada.' };
+        }
+        if (!pergunta) {
+            return { success: false, error: 'Digite uma pergunta sobre esta reunião.' };
+        }
+
+        // Uma pergunta por sessão: a nova cancela o stream anterior da MESMA sessão,
+        // sem tocar no Ask ao vivo nem nas conversas de outras sessões.
+        const anterior = this.sessionAbortControllers.get(sessionId);
+        if (anterior) anterior.abort('Nova pergunta sobre a mesma sessão.');
+        const controller = new AbortController();
+        this.sessionAbortControllers.set(sessionId, controller);
+        const { signal } = controller;
+
+        try {
+            const session = await sessionRepository.getById(sessionId);
+            if (!session) {
+                throw new Error('Esta reunião não foi encontrada no histórico.');
+            }
+
+            const transcripts = (await sttRepository.getAllTranscriptsBySessionId(sessionId)) || [];
+            if (transcripts.length === 0) {
+                throw new Error('Esta reunião não tem transcrição gravada, então não há o que consultar.');
+            }
+
+            const modelInfo = await modelStateService.getCurrentModelInfo('llm');
+            if (!modelInfo || !modelInfo.apiKey) {
+                throw new Error('Nenhum modelo de IA configurado. Adicione sua chave em Configurações.');
+            }
+
+            // Histórico ANTES de gravar a pergunta nova, senão ela apareceria duplicada.
+            const historico = (await askRepository.getAllAiMessagesBySessionId(sessionId)) || [];
+
+            await askRepository.addAiMessage({ sessionId, role: 'user', content: pergunta });
+            console.log(`[AskService] Pergunta sobre a sessão ${sessionId} gravada em ai_messages.`);
+
+            const transcriptBlock = this._formatTranscriptForPrompt(transcripts);
+            const contexto = this._buildSessionContext(session, transcriptBlock);
+
+            // O system prompt carrega prompt + metadados + transcrição e é IDÊNTICO entre
+            // as perguntas da mesma reunião — é isso que faz o prompt caching do provedor
+            // pegar (o provider Anthropic já marca o system com cache_control).
+            const systemPrompt = getSystemPrompt('v4_ask_sessao', contexto, false);
+
+            const messages = [{ role: 'system', content: systemPrompt }];
+
+            // Continuidade da conversa: últimos turnos como mensagens de verdade, depois
+            // do bloco imutável e antes da pergunta.
+            for (const msg of historico.slice(-HISTORY_TURNS)) {
+                if (msg.role === 'user' || msg.role === 'assistant') {
+                    messages.push({ role: msg.role, content: msg.content });
+                }
+            }
+
+            messages.push({ role: 'user', content: pergunta });
+
+            this._emitSessionStream({ sessionId, type: 'start', question: pergunta });
+
+            const streamingLLM = createStreamingLLM(modelInfo.provider, {
+                apiKey: modelInfo.apiKey,
+                model: modelInfo.model,
+                temperature: 0.5,
+                maxTokens: 2048,
+            });
+
+            const response = await streamingLLM.streamChat(messages);
+            const reader = response.body.getReader();
+            signal.addEventListener('abort', () => {
+                reader.cancel(signal.reason).catch(() => {});
+            });
+
+            const texto = await this._processSessionStream(reader, sessionId, signal, modelInfo.model);
+            return { success: true, response: texto };
+        } catch (error) {
+            console.error(`[AskService] Erro na conversa sobre a sessão ${sessionId}:`, error.message);
+            this._emitSessionStream({ sessionId, type: 'error', error: error.message });
+            return { success: false, error: error.message };
+        } finally {
+            if (this.sessionAbortControllers.get(sessionId) === controller) {
+                this.sessionAbortControllers.delete(sessionId);
+            }
+        }
+    }
+
+    /**
+     * Lê o SSE, emite os tokens no canal da sessão e grava a resposta em ai_messages
+     * da própria sessão. Mesmo abortada, o que já foi gerado é salvo.
+     *
+     * @returns {Promise<string>} resposta completa
+     * @private
+     */
+    async _processSessionStream(reader, sessionId, signal, model) {
+        const decoder = new TextDecoder();
+        let fullResponse = '';
+        let erro = null;
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const linhas = decoder.decode(value).split('\n').filter(l => l.trim() !== '');
+                for (const linha of linhas) {
+                    if (!linha.startsWith('data: ')) continue;
+                    const data = linha.substring(6);
+                    if (data === '[DONE]') {
+                        return await this._finalizeSessionStream(sessionId, fullResponse, model, null);
+                    }
+                    try {
+                        const token = JSON.parse(data).choices[0]?.delta?.content || '';
+                        if (token) {
+                            fullResponse += token;
+                            this._emitSessionStream({ sessionId, type: 'chunk', token, content: fullResponse });
+                        }
+                    } catch (_) {
+                        // linha SSE parcial/não-JSON — ignora
+                    }
+                }
+            }
+        } catch (streamError) {
+            if (signal.aborted) {
+                console.log(`[AskService] Stream da sessão ${sessionId} cancelado: ${signal.reason}`);
+            } else {
+                erro = streamError.message;
+                console.error(`[AskService] Erro no stream da sessão ${sessionId}:`, streamError);
+            }
+        }
+
+        return await this._finalizeSessionStream(sessionId, fullResponse, model, erro);
+    }
+
+    /** @private */
+    async _finalizeSessionStream(sessionId, fullResponse, model, erro) {
+        if (fullResponse) {
+            try {
+                await askRepository.addAiMessage({ sessionId, role: 'assistant', content: fullResponse, model });
+                await sessionRepository.touch(sessionId);
+            } catch (dbError) {
+                console.error('[AskService] Falha ao salvar resposta da sessão:', dbError);
+            }
+        }
+
+        if (erro) {
+            this._emitSessionStream({ sessionId, type: 'error', error: erro, content: fullResponse });
+        } else {
+            this._emitSessionStream({ sessionId, type: 'done', content: fullResponse });
+        }
+
+        return fullResponse;
+    }
+
+    /** Histórico da conversa de uma sessão, em ordem cronológica. */
+    async getSessionAiMessages(sessionId) {
+        if (!sessionId) return [];
+        return (await askRepository.getAllAiMessagesBySessionId(sessionId)) || [];
+    }
+
+    /** Cancela o stream em andamento de uma sessão (usuário fechou a tela, por exemplo). */
+    stopSessionAnswer(sessionId) {
+        const controller = this.sessionAbortControllers.get(sessionId);
+        if (controller) {
+            controller.abort('Cancelado pelo usuário.');
+            this.sessionAbortControllers.delete(sessionId);
+            return { success: true, stopped: true };
+        }
+        return { success: true, stopped: false };
     }
 
     /**

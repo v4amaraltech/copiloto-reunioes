@@ -151,6 +151,22 @@ module.exports = {
       }
     });
 
+    // Conversa com uma reunião passada (fatia 2): a resposta chega em streaming
+    // pelo canal 'sessions:ask-stream', sempre acompanhada do sessionId.
+    ipcMain.handle('sessions:ask', async (event, { sessionId, question } = {}) =>
+      await askService.askAboutSession({ sessionId, question }));
+    ipcMain.handle('sessions:aiMessages', async (event, { sessionId } = {}) => {
+      try {
+        const messages = await askService.getSessionAiMessages(sessionId);
+        return { success: true, messages };
+      } catch (error) {
+        console.error('[FeatureBridge] sessions:aiMessages failed:', error);
+        return { success: false, error: error.message, messages: [] };
+      }
+    });
+    ipcMain.handle('sessions:stopAsk', async (event, { sessionId } = {}) =>
+      askService.stopSessionAnswer(sessionId));
+
     // V4 Auth (Appwrite) - jornada de conta dos closers
     const v4AuthService = require('../features/common/services/v4AuthService');
     ipcMain.handle('v4auth:login', async (event, { email, password }) => await v4AuthService.login(email, password));

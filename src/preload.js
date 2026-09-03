@@ -184,6 +184,26 @@ contextBridge.exposeInMainWorld('api', {
     search: (query, limit) => ipcRenderer.invoke('sessions:search', { query, limit }),
     list: () => ipcRenderer.invoke('sessions:list'),
     transcripts: (sessionId) => ipcRenderer.invoke('sessions:transcripts', { sessionId }),
+
+    // Conversa com uma reunião passada. `ask` resolve quando o stream termina
+    // ({ success, response } ou { success: false, error }); os pedaços chegam
+    // antes, por onAskStream.
+    ask: (sessionId, question) => ipcRenderer.invoke('sessions:ask', { sessionId, question }),
+    stopAsk: (sessionId) => ipcRenderer.invoke('sessions:stopAsk', { sessionId }),
+
+    // Histórico já gravado na sessão: { success, messages } em ordem cronológica,
+    // cada mensagem com { id, session_id, role: 'user'|'assistant', content, sent_at }.
+    aiMessages: (sessionId) => ipcRenderer.invoke('sessions:aiMessages', { sessionId }),
+
+    // Streaming da resposta: callback(event, { sessionId, type, ... }) com
+    //   type 'start' → { question }
+    //   type 'chunk' → { token, content }   (content = resposta acumulada)
+    //   type 'done'  → { content }
+    //   type 'error' → { error, content? }
+    // Filtre por sessionId: o canal é compartilhado por todas as janelas.
+    onAskStream: (callback) => ipcRenderer.on('sessions:ask-stream', callback),
+    removeOnAskStream: (callback) => ipcRenderer.removeListener('sessions:ask-stream', callback),
+    removeAllAskStreamListeners: () => ipcRenderer.removeAllListeners('sessions:ask-stream'),
   },
 
   // src/ui/listen/ListenView.js
