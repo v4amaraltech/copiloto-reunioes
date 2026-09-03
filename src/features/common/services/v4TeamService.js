@@ -255,7 +255,7 @@ class V4TeamService {
      *   1. a membership do convidado recebe o papel próprio `c<uid>`;
      *   2. a membership do gestor passa a carregar esse mesmo papel (é o que lhe dá leitura).
      */
-    async invite(email, role = PAPEL_CLOSER) {
+    async invite(email, role = PAPEL_CLOSER) { // role: só 'closer' é aceito nesta fase
         const emailLimpo = (email || '').trim();
         if (!emailLimpo) {
             return { success: false, code: 'email_vazio', error: 'Digite o e-mail de quem você quer convidar.' };
@@ -272,7 +272,14 @@ class V4TeamService {
                 return { success: false, code: 'ja_no_time', error: 'Esta pessoa já está no time.' };
             }
 
-            const papelPedido = role === PAPEL_GESTOR ? PAPEL_GESTOR : PAPEL_CLOSER;
+            // Nesta fase a empresa tem um único gestor: um segundo gestor não seria owner do
+            // time (não conseguiria administrar memberships) nem acumularia os papéis
+            // c<uid> dos closers (não veria nada). Recusar é mais honesto do que aceitar
+            // e entregar um gestor que não funciona.
+            if (role === PAPEL_GESTOR) {
+                return { success: false, code: 'papel_gestor_indisponivel', error: 'Nesta versão a empresa tem um único gestor. Convide como closer.' };
+            }
+            const papelPedido = PAPEL_CLOSER;
 
             const criada = await this._call(`/teams/${team.id}/memberships`, 'POST', {
                 email: emailLimpo,

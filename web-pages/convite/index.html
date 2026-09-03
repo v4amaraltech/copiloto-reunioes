@@ -124,6 +124,11 @@
   var userId = params.get('userId');
   var secret = params.get('secret');
 
+  // O secret já está na memória: some da barra de endereço, do histórico e de
+  // qualquer captura de tela/compartilhamento da URL. Recarregar a página depois
+  // disso mostra "link inválido", o que é o comportamento certo para um link de uso único.
+  try { history.replaceState(null, '', location.pathname); } catch (_) {}
+
   var elAvisoSenha = document.getElementById('aviso-senha');
   var btnSenha = document.getElementById('btn-senha');
   var emailDoConvite = null;

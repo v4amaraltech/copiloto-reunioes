@@ -179,6 +179,10 @@ for (const sinal of ['SIGINT', 'SIGTERM']) {
         passo('6. convite repetido é recusado com mensagem em pt-BR',
             duplicado.success === false && !!duplicado.code && /já/i.test(duplicado.error || ''), duplicado.error);
 
+        const comoGestor = await v4TeamService.invite(`e2e-times-gestor2-${ts}@v4company.com`, 'gestor');
+        passo('6b. convite com papel gestor é recusado (um gestor por empresa nesta fase)',
+            comoGestor.success === false && comoGestor.code === 'papel_gestor_indisponivel', comoGestor.error);
+
         // A rota pública de aceite não aceita API key — é por isso que o aceite mora na
         // página web. Provado aqui para o dia em que alguém tentar "simplificar".
         const statusComKey = await comoJson(await admin(

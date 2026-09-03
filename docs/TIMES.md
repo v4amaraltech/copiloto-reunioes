@@ -159,5 +159,7 @@ Ao entrar num time, e no boot quando já existe time, os documentos que já est�
   primeiro time e o resto do código assume 1.
 - **Criptografia por campo**: os textos continuam subindo em claro (paridade com o que já
   existia); quando os repositories migrarem, o gestor precisará da mesma chave.
-- **Transferência de posse do time** e mais de um gestor por empresa.
+- **Transferência de posse do time** e mais de um gestor por empresa — `invite()` recusa o
+  papel `gestor` (`papel_gestor_indisponivel`): um segundo gestor não seria owner nem
+  acumularia os papéis `c<uid>`, então não funcionaria.
 - **Convite em massa** e reenvio de convite pendente.
