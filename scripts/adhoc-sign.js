@@ -7,6 +7,12 @@ const path = require('path');
 
 exports.default = async function afterPack(context) {
     if (context.electronPlatformName !== 'darwin') return;
+    // Com Developer ID no ambiente (CSC_NAME ou APPLE_TEAM_ID), quem assina é o
+    // electron-builder; a assinatura ad-hoc só serve enquanto não há certificado.
+    if (process.env.CSC_NAME || process.env.APPLE_TEAM_ID) {
+        console.log('[adhoc-sign] Developer ID configurado — pulando assinatura ad-hoc.');
+        return;
+    }
     // Não assinar os builds intermediários por arquitetura: assinaturas diferentes
     // quebram a fusão do binário universal. Só o app final é assinado.
     if (context.appOutDir.endsWith('-temp')) {

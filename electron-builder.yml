@@ -73,9 +73,11 @@ mac:
     hardenedRuntime: true
     entitlements: entitlements.plist
     entitlementsInherit: entitlements.plist
-    # Assinatura: o electron-builder não faz ad-hoc via `identity`, então o hook
-    # afterPack (scripts/adhoc-sign.js) assina com o identificador correto.
-    # Trocar pelo Developer ID quando a conta Apple estiver ativa.
+    # Assinatura: `identity: null` desliga a assinatura do electron-builder e o
+    # hook afterPack (scripts/adhoc-sign.js) assina ad-hoc. Com Developer ID,
+    # use `npm run build:signed` — ele sobrepõe a identity pela variável CSC_NAME
+    # e, com as APPLE_* definidas, scripts/notarize.js notariza.
+    # Passo a passo: docs/ASSINATURA-E-NOTARIZACAO.md
     identity: null
     target:
       - target: dmg
@@ -85,6 +87,8 @@ mac:
 
 # Hook pós-empacotamento: assinatura ad-hoc com identificador com.v4amaral.copiloto
 afterPack: scripts/adhoc-sign.js
+# Notarização na Apple (só roda com as variáveis APPLE_* definidas)
+afterSign: scripts/notarize.js
 
 # DMG com a identidade V4: ícone do volume e título
 dmg:
