@@ -1068,8 +1068,8 @@ export class SettingsView extends LitElement {
         }
 
         .transcript-box {
-            flex: 1;
-            min-height: 140px;
+            flex: 1 1 38%;
+            min-height: 96px;
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -1126,22 +1126,183 @@ export class SettingsView extends LitElement {
             border-color: rgba(238, 27, 46, 0.35);
         }
 
-        .chat-soon {
+        /* ── Conversar com a reunião ── */
+        .chat-pane {
+            flex: 1 1 62%;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .chat-head {
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 11px 13px;
-            border-radius: 11px;
-            border: 1px dashed rgba(255, 255, 255, 0.16);
-            background: rgba(255, 255, 255, 0.02);
-            font-size: 12px;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
             color: rgba(255, 255, 255, 0.42);
         }
 
-        .chat-soon svg {
-            width: 15px;
-            height: 15px;
+        .chat-head svg {
+            width: 14px;
+            height: 14px;
             flex-shrink: 0;
+        }
+
+        .chat-box {
+            flex: 1;
+            min-height: 118px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 13px;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            border-radius: 12px;
+            box-sizing: border-box;
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .msg {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            max-width: 86%;
+        }
+
+        .msg.user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .msg-who {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10.5px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            color: rgba(255, 255, 255, 0.45);
+        }
+
+        .msg-time {
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .msg-text {
+            font-size: 12.5px;
+            line-height: 1.55;
+            color: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 11px;
+            padding: 9px 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            user-select: text;
+            cursor: text;
+        }
+
+        .msg.user .msg-text {
+            background: rgba(238, 27, 46, 0.16);
+            border-color: rgba(238, 27, 46, 0.35);
+        }
+
+        .msg.error .msg-text {
+            background: rgba(238, 27, 46, 0.14);
+            border-color: rgba(238, 27, 46, 0.4);
+            color: #ff9d9d;
+        }
+
+        .typing-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            margin-left: 2px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.6);
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.25; }
+            50% { opacity: 1; }
+        }
+
+        .chat-empty {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+            margin: auto 0;
+            padding: 8px 4px;
+        }
+
+        .chat-empty-title {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.5);
+            text-align: center;
+        }
+
+        .chat-suggestions {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .chat-suggestion {
+            width: 100%;
+            box-sizing: border-box;
+            text-align: left;
+            font-family: inherit;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.82);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            border-radius: 10px;
+            padding: 9px 12px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .chat-suggestion:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.22);
+        }
+
+        .chat-composer {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .chat-input {
+            flex: 1;
+            min-width: 0;
+            min-height: 40px;
+            max-height: 96px;
+            resize: none;
+            line-height: 1.45;
+            padding: 10px 12px;
+        }
+
+        .chat-send {
+            flex-shrink: 0;
+            min-width: 104px;
         }
 
         /* ══════════════[ ABA CONTA ]══════════════ */
@@ -1567,6 +1728,11 @@ export class SettingsView extends LitElement {
         openMeeting: { type: Object, state: true },
         openMeetingTurns: { type: Array, state: true },
         openMeetingLoading: { type: Boolean, state: true },
+        chatMessages: { type: Array, state: true },
+        chatLoading: { type: Boolean, state: true },
+        chatInput: { type: String, state: true },
+        chatStreaming: { type: Boolean, state: true },
+        chatStreamingText: { type: String, state: true },
         presets: { type: Array, state: true },
         selectedPreset: { type: Object, state: true },
         showPresets: { type: Boolean, state: true },
@@ -1625,6 +1791,13 @@ export class SettingsView extends LitElement {
         this.openMeetingTurns = [];
         this.openMeetingLoading = false;
         this._meetingSearchTimer = null;
+        this.chatMessages = [];
+        this.chatLoading = false;
+        this.chatInput = '';
+        this.chatStreaming = false;
+        this.chatStreamingText = '';
+        this._askStreamHandler = null;
+        this._chatShouldScroll = false;
         this.agentsMode = 'list';
         this.agentDraftId = null;
         this.agentDraftTitle = '';
@@ -1830,6 +2003,12 @@ export class SettingsView extends LitElement {
         this.openMeetingTurns = [];
         this.openMeetingLoading = true;
         this.meetingsMode = 'detail';
+        this.chatMessages = [];
+        this.chatInput = '';
+        this.chatStreaming = false;
+        this.chatStreamingText = '';
+        this.attachAskStream();
+        this.loadMeetingChat(meeting.id);
         this.requestUpdate();
         try {
             const result = await window.api.sessions.transcripts(meeting.id);
@@ -1844,10 +2023,167 @@ export class SettingsView extends LitElement {
     }
 
     backToMeetingList() {
+        // Sair do detalhe com uma resposta em andamento deixaria uma geração órfã.
+        if (this.chatStreaming && this.openMeeting) {
+            window.api.sessions.stopAsk(this.openMeeting.id).catch(() => {});
+        }
+        this.detachAskStream();
         this.meetingsMode = 'list';
         this.openMeeting = null;
         this.openMeetingTurns = [];
+        this.chatMessages = [];
+        this.chatInput = '';
+        this.chatStreaming = false;
+        this.chatStreamingText = '';
         this.requestUpdate();
+    }
+
+    // ── Conversar com a reunião ──────────────────────────────────────
+
+    /** Histórico já gravado desta reunião. */
+    async loadMeetingChat(sessionId) {
+        if (!window.api?.sessions?.aiMessages) return;
+        this.chatLoading = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.sessions.aiMessages(sessionId);
+            // Uma resposta atrasada não pode pisar numa reunião já trocada.
+            if (this.openMeeting?.id !== sessionId) return;
+            this.chatMessages = result?.success ? (result.messages || []) : [];
+            this._chatShouldScroll = true;
+        } catch (error) {
+            console.error('[SettingsView] Falha ao carregar a conversa:', error);
+            this.chatMessages = [];
+        } finally {
+            this.chatLoading = false;
+            this.requestUpdate();
+        }
+    }
+
+    /** O canal do stream é compartilhado: só interessa o que é desta reunião. */
+    attachAskStream() {
+        if (!window.api?.sessions?.onAskStream) return;
+        this.detachAskStream();
+        this._askStreamHandler = (event, payload = {}) => {
+            if (!payload || payload.sessionId !== this.openMeeting?.id) return;
+            if (payload.type === 'chunk') {
+                this.chatStreamingText = payload.content ?? (this.chatStreamingText + (payload.token || ''));
+            } else if (payload.type === 'done') {
+                this.chatStreamingText = payload.content ?? this.chatStreamingText;
+            } else if (payload.type === 'error') {
+                this.chatStreamingText = payload.content ?? this.chatStreamingText;
+            }
+            this._chatShouldScroll = true;
+            this.requestUpdate();
+        };
+        window.api.sessions.onAskStream(this._askStreamHandler);
+    }
+
+    detachAskStream() {
+        if (this._askStreamHandler && window.api?.sessions?.removeOnAskStream) {
+            window.api.sessions.removeOnAskStream(this._askStreamHandler);
+        }
+        this._askStreamHandler = null;
+    }
+
+    useChatSuggestion(texto) {
+        this.chatInput = texto;
+        this.requestUpdate();
+        this.updateComplete.then(() => this.shadowRoot.querySelector('.chat-input')?.focus());
+    }
+
+    /** Enter envia; Shift+Enter quebra linha. */
+    handleChatKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            this.handleAskMeeting();
+        }
+    }
+
+    async handleAskMeeting() {
+        const pergunta = (this.chatInput || '').trim();
+        const sessionId = this.openMeeting?.id;
+        if (!pergunta || !sessionId || this.chatStreaming) return;
+
+        const agora = Math.floor(Date.now() / 1000);
+        // A pergunta aparece na hora; o histórico gravado chega depois do 'done'.
+        this.chatMessages = [
+            ...this.chatMessages.filter(m => m.role !== 'error'),
+            { id: `local-${agora}`, session_id: sessionId, role: 'user', content: pergunta, sent_at: agora },
+        ];
+        this.chatInput = '';
+        this.chatStreaming = true;
+        this.chatStreamingText = '';
+        this._chatShouldScroll = true;
+        this.requestUpdate();
+
+        let erro = '';
+        try {
+            const result = await window.api.sessions.ask(sessionId, pergunta);
+            if (!result?.success) erro = result?.error || 'Não foi possível responder agora. Tente de novo.';
+        } catch (error) {
+            console.error('[SettingsView] Falha ao perguntar à reunião:', error);
+            erro = 'Não foi possível responder agora. Tente de novo.';
+        }
+
+        // Trocou de reunião no meio do caminho: nada a atualizar aqui.
+        if (this.openMeeting?.id !== sessionId) return;
+
+        const parcial = this.chatStreamingText;
+        this.chatStreaming = false;
+        this.chatStreamingText = '';
+
+        // O histórico gravado é a fonte da verdade; só cai no local se ele vier vazio.
+        const antes = this.chatMessages.length;
+        await this.loadMeetingChat(sessionId);
+        if (this.chatMessages.length < antes) {
+            this.chatMessages = [
+                { id: `local-${agora}`, session_id: sessionId, role: 'user', content: pergunta, sent_at: agora },
+            ];
+            if (parcial) {
+                this.chatMessages = [...this.chatMessages,
+                    { id: `local-${agora}-a`, session_id: sessionId, role: 'assistant', content: parcial, sent_at: agora }];
+            }
+        }
+
+        if (erro) {
+            this.chatMessages = [...this.chatMessages,
+                { id: `err-${Date.now()}`, role: 'error', content: erro, sent_at: Math.floor(Date.now() / 1000) }];
+        }
+        this._chatShouldScroll = true;
+        this.requestUpdate();
+    }
+
+    async handleStopAsk() {
+        if (!this.openMeeting) return;
+        try {
+            await window.api.sessions.stopAsk(this.openMeeting.id);
+        } catch (error) {
+            console.error('[SettingsView] Falha ao parar a resposta:', error);
+        }
+    }
+
+    /** 'ter, 2 set · 14:30' curto, só para os balões. */
+    formatChatTime(sentAt) {
+        if (!sentAt) return '';
+        const d = new Date(Number(sentAt) * 1000);
+        if (Number.isNaN(d.getTime())) return '';
+        const hoje = new Date();
+        const mesmoDia = d.toDateString() === hoje.toDateString();
+        const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        if (mesmoDia) return hora;
+        const dia = d.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace(/\./g, '');
+        return `${dia} · ${hora}`;
+    }
+
+    /** Mantém a conversa colada no fim enquanto a resposta cresce. */
+    updated(changed) {
+        if (super.updated) super.updated(changed);
+        if (this._chatShouldScroll) {
+            this._chatShouldScroll = false;
+            const box = this.shadowRoot?.querySelector('.chat-box');
+            if (box) box.scrollTop = box.scrollHeight;
+        }
     }
 
     /** 'ter, 2 set · 14:30' — started_at vem em segundos. */
@@ -2230,6 +2566,7 @@ export class SettingsView extends LitElement {
 
     disconnectedCallback() {
         super.disconnectedCallback();
+        this.detachAskStream();
         this.cleanupEventListeners();
         this.cleanupIpcListeners();
         this.cleanupWindowResize();
@@ -3041,6 +3378,12 @@ export class SettingsView extends LitElement {
 
         const agentesPane = this.agentsMode === 'editor' ? agentsEditorPane : agentsListPane;
 
+        const SUGESTOES_REUNIAO = [
+            'Quais foram as objeções do cliente?',
+            'Resuma os próximos passos combinados',
+            'O que o cliente disse sobre preço?',
+        ];
+
         const searchIcon = icon(svg`<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l4.5 4.5"/>`);
         const chevronIcon = icon(svg`<path d="M9.5 5.5L16 12l-6.5 6.5"/>`);
         const chatIcon = icon(svg`<path d="M20 14.5a2.5 2.5 0 0 1-2.5 2.5H9l-4.5 3.5V6.5A2.5 2.5 0 0 1 7 4h10.5A2.5 2.5 0 0 1 20 6.5v8z"/>`);
@@ -3154,9 +3497,68 @@ export class SettingsView extends LitElement {
                     </div>
                 `}
 
-                <div class="chat-soon">
-                    ${chatIcon}
-                    <span>Conversar com esta reunião chega na próxima atualização</span>
+                <div class="chat-pane">
+                    <div class="chat-head">${chatIcon}<span>Conversar com esta reunião</span></div>
+
+                    <div class="chat-box">
+                        ${this.chatLoading && this.chatMessages.length === 0 ? html`
+                            <div class="loading-state"><div class="loading-spinner"></div><span>Carregando conversa…</span></div>
+                        ` : (this.chatMessages.length === 0 && !this.chatStreaming) ? html`
+                            <div class="chat-empty">
+                                <span class="chat-empty-title">Pergunte qualquer coisa sobre esta reunião.</span>
+                                <div class="chat-suggestions">
+                                    ${SUGESTOES_REUNIAO.map(sug => html`
+                                        <button class="chat-suggestion" @click=${() => this.useChatSuggestion(sug)}>${sug}</button>
+                                    `)}
+                                </div>
+                            </div>
+                        ` : html`
+                            ${this.chatMessages.map(m => {
+                                if (m.role === 'error') {
+                                    return html`
+                                        <div class="msg error">
+                                            <span class="msg-who">Erro</span>
+                                            <span class="msg-text">${m.content}</span>
+                                        </div>
+                                    `;
+                                }
+                                const ehUsuario = m.role === 'user';
+                                return html`
+                                    <div class="msg ${ehUsuario ? 'user' : ''}">
+                                        <span class="msg-who">
+                                            ${ehUsuario ? 'Você' : 'Copiloto'}
+                                            <span class="msg-time">${this.formatChatTime(m.sent_at)}</span>
+                                        </span>
+                                        <span class="msg-text">${m.content}</span>
+                                    </div>
+                                `;
+                            })}
+                            ${this.chatStreaming ? html`
+                                <div class="msg">
+                                    <span class="msg-who">Copiloto</span>
+                                    <span class="msg-text">${this.chatStreamingText}<span class="typing-dot"></span></span>
+                                </div>
+                            ` : ''}
+                        `}
+                    </div>
+
+                    <div class="chat-composer">
+                        <textarea
+                            class="field-input chat-input"
+                            placeholder="Pergunte sobre esta reunião…"
+                            .value=${this.chatInput}
+                            ?disabled=${this.chatStreaming}
+                            @input=${e => { this.chatInput = e.target.value; }}
+                            @keydown=${e => this.handleChatKeydown(e)}
+                        ></textarea>
+                        ${this.chatStreaming ? html`
+                            <button class="settings-button danger chat-send" @click=${() => this.handleStopAsk()}>Parar</button>
+                        ` : html`
+                            <button class="settings-button primary chat-send"
+                                    ?disabled=${!(this.chatInput || '').trim()}
+                                    @click=${() => this.handleAskMeeting()}>Perguntar</button>
+                        `}
+                    </div>
                 </div>
             </div>
         `;
