@@ -1,4 +1,4 @@
-# Páginas de e-mail (recuperação e verificação)
+# Páginas de e-mail (recuperação, verificação e convite)
 
 HTML estático autocontido — sem build, sem dependência externa, sem CDN.
 São o destino dos links que o Appwrite envia por e-mail.
@@ -7,10 +7,12 @@ São o destino dos links que o Appwrite envia por e-mail.
 |---|---|
 | `recuperar-senha/index.html` | `https://conta.v4companyamaral.com/recuperar-senha` |
 | `verificar-email/index.html` | `https://conta.v4companyamaral.com/verificar-email` |
+| `convite/index.html` | `https://conta.v4companyamaral.com/convite` |
 
 Os caminhos vêm de `RECOVERY_URL` / `VERIFICATION_URL` em
-`src/features/common/services/v4AuthService.js`, sobrescrevíveis pelas env
-`V4_RECOVERY_URL` e `V4_VERIFICATION_URL`.
+`src/features/common/services/v4AuthService.js` e de `CONVITE_URL` em
+`src/features/common/services/v4TeamService.js`, sobrescrevíveis pelas env
+`V4_RECOVERY_URL`, `V4_VERIFICATION_URL` e `V4_INVITE_URL`.
 
 ## Como servir
 
@@ -39,6 +41,21 @@ Se mudar o `nginx.conf`, recrie o container (`docker compose up -d --force-recre
 2. **Configuração no topo de cada arquivo.** `APPWRITE_ENDPOINT` e
    `APPWRITE_PROJECT_ID` estão como constantes no `<script>`. O project id é
    público (vai no header de toda requisição do cliente) — não é segredo.
+
+## Página de convite
+
+Recebe `?teamId=&membershipId=&userId=&secret=` e confirma a adesão com
+`PATCH /v1/teams/{teamId}/memberships/{membershipId}/status`. É rota **pública**:
+o par `userId`+`secret` do e-mail é a credencial — não há sessão nem API key
+(uma API key aqui devolve 401 `general_unauthorized_scope`, medido).
+
+Depois de confirmar, mostra "Você entrou no time X" com dois botões:
+`Abrir o Copiloto` (deep link `pickleglass://team-joined`, que o app trata
+recarregando o time) e `Criar minha senha`, para quem foi convidado por e-mail e
+ainda não tinha conta — dispara `POST /v1/account/recovery` apontando de volta
+para `/recuperar-senha`, reaproveitando o fluxo que já existia.
+
+Modelo de papéis e permissões: `docs/TIMES.md`.
 
 ## Rota de verificação
 

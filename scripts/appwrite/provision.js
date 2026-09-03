@@ -67,6 +67,7 @@ const COLLECTIONS = [
         attributes: [
             str('uid', 64, true),
             str('members', 64, false, true), // array — sharing futuro
+            str('team_id', 64),              // empresa dona da call (docs/TIMES.md)
             str('title', 2048),              // criptografado
             str('session_type', 32),
             int('started_at'),
@@ -77,6 +78,7 @@ const COLLECTIONS = [
             { key: 'idx_uid', attributes: ['uid'] },
             { key: 'idx_uid_ended', attributes: ['uid', 'ended_at'] },
             { key: 'idx_started', attributes: ['started_at'], orders: ['DESC'] },
+            { key: 'idx_team', attributes: ['team_id'], optional: true },
             { key: 'idx_members', attributes: ['members'], optional: true },
         ],
     },
@@ -317,7 +319,7 @@ async function seedDefaultPresets() {
 // ---------------------------------------------------------------------------
 const SMOKE_DOCS = {
     users: { display_name: 'Smoke User', email: 'smoke@example.invalid', created_at: 1, auto_update_enabled: true },
-    sessions: { uid: 'smoke-uid', members: ['smoke-uid'], title: 'ct:abc', session_type: 'ask', started_at: 1, updated_at: 1 },
+    sessions: { uid: 'smoke-uid', members: ['smoke-uid'], team_id: 'smoke-team', title: 'ct:abc', session_type: 'ask', started_at: 1, updated_at: 1 },
     transcripts: { uid: 'smoke-uid', session_id: 'smoke-session', start_at: 1, speaker: 'Me', text: 'ct:abc', lang: 'en', created_at: 1 },
     ai_messages: { uid: 'smoke-uid', session_id: 'smoke-session', sent_at: 1, role: 'user', content: 'ct:abc', tokens: 1, model: 'm', created_at: 1 },
     summaries: { uid: 'smoke-uid', session_id: 'smoke-session', generated_at: 1, model: 'm', text: 'ct:abc', tldr: 'ct:abc', bullet_json: 'ct:[]', action_json: 'ct:[]', tokens_used: 1, updated_at: 1 },

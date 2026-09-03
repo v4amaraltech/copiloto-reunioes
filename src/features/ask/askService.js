@@ -526,14 +526,69 @@ class AskService {
         return `${cabecalho}\n\nTRANSCRIÇÃO COMPLETA (me = closer da V4, them = lead):\n-----\n${transcriptBlock.texto}\n-----`;
     }
 
+    /** Sessão + transcrição do banco local (call do próprio usuário). @private */
+    async _carregarSessaoLocal(sessionId) {
+        const session = await sessionRepository.getById(sessionId);
+        if (!session) {
+            throw new Error('Esta reunião não foi encontrada no histórico.');
+        }
+        const transcripts = (await sttRepository.getAllTranscriptsBySessionId(sessionId)) || [];
+        if (transcripts.length === 0) {
+            throw new Error('Esta reunião não tem transcrição gravada, então não há o que consultar.');
+        }
+        return { session, transcripts, ownerUid: session.uid || null };
+    }
+
+    /** Sessão + transcrição da nuvem (call de um closer, aberta pelo gestor). @private */
+    async _carregarSessaoDaNuvem(sessionId) {
+        const v4TeamService = require('../common/services/v4TeamService');
+
+        const session = await v4TeamService.getCloudSession(sessionId);
+        if (!session) {
+            throw new Error('Esta reunião do time não foi encontrada, ou você não tem acesso a ela.');
+        }
+
+        const r = await v4TeamService.teamTranscripts(sessionId);
+        if (!r.success) {
+            throw new Error(r.error || 'Não foi possível carregar a transcrição desta reunião.');
+        }
+
+        return { session, transcripts: r.transcripts, ownerUid: session.uid || null };
+    }
+
+    /** Histórico da conversa, do banco local ou da nuvem. @private */
+    async _historicoDaSessao(sessionId, fonte) {
+        if (fonte === 'cloud') {
+            const v4TeamService = require('../common/services/v4TeamService');
+            const r = await v4TeamService.cloudAiMessages(sessionId);
+            return r.success ? r.messages : [];
+        }
+        return (await askRepository.getAllAiMessagesBySessionId(sessionId)) || [];
+    }
+
+    /**
+     * Grava uma mensagem da conversa. Na nuvem ela fica na sessão do closer, com o
+     * gestor administrando o documento e o closer lendo. @private
+     */
+    async _gravarMensagem({ sessionId, fonte, ownerUid, role, content, model }) {
+        if (fonte === 'cloud') {
+            const v4TeamService = require('../common/services/v4TeamService');
+            const r = await v4TeamService.addCloudAiMessage({ sessionId, ownerUid, role, content, model });
+            if (!r.success) throw new Error(r.error || 'Não foi possível gravar a conversa na nuvem.');
+            return r;
+        }
+        return await askRepository.addAiMessage({ sessionId, role, content, model });
+    }
+
     /**
      * Responde uma pergunta sobre uma reunião passada.
      *
      * @param {{sessionId: string, question: string}} params
      * @returns {Promise<{success: boolean, response?: string, error?: string}>}
      */
-    async askAboutSession({ sessionId, question } = {}) {
+    async askAboutSession({ sessionId, question, source = 'local' } = {}) {
         const pergunta = (question || '').trim();
+        const fonte = source === 'cloud' ? 'cloud' : 'local';
 
         if (!sessionId) {
             return { success: false, error: 'Sessão não informada.' };
@@ -551,15 +606,12 @@ class AskService {
         const { signal } = controller;
 
         try {
-            const session = await sessionRepository.getById(sessionId);
-            if (!session) {
-                throw new Error('Esta reunião não foi encontrada no histórico.');
-            }
-
-            const transcripts = (await sttRepository.getAllTranscriptsBySessionId(sessionId)) || [];
-            if (transcripts.length === 0) {
-                throw new Error('Esta reunião não tem transcrição gravada, então não há o que consultar.');
-            }
+            // fonte 'local' = call do próprio usuário, no SQLite.
+            // fonte 'cloud' = call de um closer do time, lida do Appwrite pelo gestor
+            //                 (a permissão do documento é quem autoriza — docs/TIMES.md).
+            const { session, transcripts, ownerUid } = fonte === 'cloud'
+                ? await this._carregarSessaoDaNuvem(sessionId)
+                : await this._carregarSessaoLocal(sessionId);
 
             const modelInfo = await modelStateService.getCurrentModelInfo('llm');
             if (!modelInfo || !modelInfo.apiKey) {
@@ -567,10 +619,10 @@ class AskService {
             }
 
             // Histórico ANTES de gravar a pergunta nova, senão ela apareceria duplicada.
-            const historico = (await askRepository.getAllAiMessagesBySessionId(sessionId)) || [];
+            const historico = await this._historicoDaSessao(sessionId, fonte);
 
-            await askRepository.addAiMessage({ sessionId, role: 'user', content: pergunta });
-            console.log(`[AskService] Pergunta sobre a sessão ${sessionId} gravada em ai_messages.`);
+            await this._gravarMensagem({ sessionId, fonte, ownerUid, role: 'user', content: pergunta });
+            console.log(`[AskService] Pergunta sobre a sessão ${sessionId} gravada (fonte ${fonte}).`);
 
             const transcriptBlock = this._formatTranscriptForPrompt(transcripts);
             const contexto = this._buildSessionContext(session, transcriptBlock);
@@ -594,7 +646,10 @@ class AskService {
 
             this._emitSessionStream({ sessionId, type: 'start', question: pergunta });
 
-            const streamingLLM = createStreamingLLM(modelInfo.provider, {
+            // require tardio: o e2e stuba a factory, e o destructuring do topo do
+            // arquivo congelaria a referência antes do stub.
+            const { createStreamingLLM: criarStream } = require('../common/ai/factory');
+            const streamingLLM = criarStream(modelInfo.provider, {
                 apiKey: modelInfo.apiKey,
                 model: modelInfo.model,
                 temperature: 0.5,
@@ -607,7 +662,7 @@ class AskService {
                 reader.cancel(signal.reason).catch(() => {});
             });
 
-            const texto = await this._processSessionStream(reader, sessionId, signal, modelInfo.model);
+            const texto = await this._processSessionStream(reader, sessionId, signal, modelInfo.model, { fonte, ownerUid });
             return { success: true, response: texto };
         } catch (error) {
             console.error(`[AskService] Erro na conversa sobre a sessão ${sessionId}:`, error.message);
@@ -627,7 +682,7 @@ class AskService {
      * @returns {Promise<string>} resposta completa
      * @private
      */
-    async _processSessionStream(reader, sessionId, signal, model) {
+    async _processSessionStream(reader, sessionId, signal, model, destino = { fonte: 'local', ownerUid: null }) {
         const decoder = new TextDecoder();
         let fullResponse = '';
         let erro = null;
@@ -642,7 +697,7 @@ class AskService {
                     if (!linha.startsWith('data: ')) continue;
                     const data = linha.substring(6);
                     if (data === '[DONE]') {
-                        return await this._finalizeSessionStream(sessionId, fullResponse, model, null);
+                        return await this._finalizeSessionStream(sessionId, fullResponse, model, null, destino);
                     }
                     try {
                         const token = JSON.parse(data).choices[0]?.delta?.content || '';
@@ -664,17 +719,25 @@ class AskService {
             }
         }
 
-        return await this._finalizeSessionStream(sessionId, fullResponse, model, erro);
+        return await this._finalizeSessionStream(sessionId, fullResponse, model, erro, destino);
     }
 
     /** @private */
-    async _finalizeSessionStream(sessionId, fullResponse, model, erro) {
+    async _finalizeSessionStream(sessionId, fullResponse, model, erro, destino = { fonte: 'local', ownerUid: null }) {
         if (fullResponse) {
             try {
-                await askRepository.addAiMessage({ sessionId, role: 'assistant', content: fullResponse, model });
-                await sessionRepository.touch(sessionId);
+                await this._gravarMensagem({
+                    sessionId,
+                    fonte: destino.fonte,
+                    ownerUid: destino.ownerUid,
+                    role: 'assistant',
+                    content: fullResponse,
+                    model,
+                });
+                // `touch` só faz sentido na sessão local; a da nuvem não é nossa.
+                if (destino.fonte !== 'cloud') await sessionRepository.touch(sessionId);
             } catch (dbError) {
-                console.error('[AskService] Falha ao salvar resposta da sessão:', dbError);
+                console.error('[AskService] Falha ao salvar resposta da sessão:', dbError.message);
             }
         }
 
@@ -687,10 +750,10 @@ class AskService {
         return fullResponse;
     }
 
-    /** Histórico da conversa de uma sessão, em ordem cronológica. */
-    async getSessionAiMessages(sessionId) {
+    /** Histórico da conversa de uma sessão, em ordem cronológica (local ou da nuvem). */
+    async getSessionAiMessages(sessionId, source = 'local') {
         if (!sessionId) return [];
-        return (await askRepository.getAllAiMessagesBySessionId(sessionId)) || [];
+        return await this._historicoDaSessao(sessionId, source === 'cloud' ? 'cloud' : 'local');
     }
 
     /** Cancela o stream em andamento de uma sessão (usuário fechou a tela, por exemplo). */

@@ -124,7 +124,15 @@ class V4AuthService {
                 setSessionSecret(stored.secret);
                 try {
                     const me = await getAccountInstance().get();
-                    this.session = { secret: stored.secret, uid: me.$id, email: me.email, emailVerified: !!me.emailVerification };
+                    this.session = {
+                        secret: stored.secret,
+                        uid: me.$id,
+                        email: me.email,
+                        emailVerified: !!me.emailVerification,
+                        // O time viaja no mesmo blob — sem isto, cada restart "esquecia" o time
+                        // e o envio pós-call subia sem a permissão do gestor.
+                        team: stored.team || null,
+                    };
                     console.log(`[V4Auth] Session restored for ${me.email}`);
                 } catch (err) {
                     if (err?.code === 401) {
@@ -355,17 +363,53 @@ class V4AuthService {
     }
 
     /** Avisa as janelas para recarregarem o estado (SettingsView escuta user-state-changed). */
-    _broadcastStateChange() {
+    _broadcastStateChange(payload = { v4SessionExpired: true }) {
         try {
             const { BrowserWindow } = require('electron');
             BrowserWindow.getAllWindows().forEach(win => {
                 if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
-                    win.webContents.send('user-state-changed', { v4SessionExpired: true });
+                    win.webContents.send('user-state-changed', payload);
                 }
             });
         } catch (_) {
             // fora do Electron (harness/testes): sem janelas para avisar
         }
+    }
+
+    /**
+     * Estado do time (id, nome, papel) — guardado no MESMO blob do Keychain que o
+     * estado de conta, para nascer e morrer junto com a sessão. `null` limpa.
+     *
+     * Só grava e avisa as janelas quando algo mudou de fato: o v4TeamService chama
+     * isto a cada leitura do time, e cada aviso faz a tela de configurações recarregar
+     * tudo — sem esta guarda, uma pergunta do gestor sobre uma reunião disparava isso
+     * duas vezes.
+     */
+    async setTeamState(team) {
+        await this._loadFromKeychain();
+        if (!this.session) return { success: false, code: 'sem_sessao' };
+
+        const novo = team ? { id: team.id, name: team.name || '', role: team.role || null } : null;
+        const atual = this.session.team || null;
+        const igual = (!novo && !atual) ||
+            (!!novo && !!atual && novo.id === atual.id && novo.name === atual.name && novo.role === atual.role);
+        if (igual) return { success: true, changed: false };
+
+        this.session.team = novo;
+        await this._persist();
+        this._broadcastStateChange({ v4TeamChanged: true, team: novo });
+        return { success: true, changed: true };
+    }
+
+    async getTeamState() {
+        await this._loadFromKeychain();
+        return this.session?.team || null;
+    }
+
+    /** Secret da sessão atual — o v4TeamService chama as rotas de Teams por fetch direto. */
+    async getSessionSecret() {
+        await this._loadFromKeychain();
+        return this.session?.secret || null;
     }
 
     /** uid do closer logado no Appwrite, ou null (chamador decide como falhar). */
@@ -379,9 +423,12 @@ class V4AuthService {
         return {
             loggedIn: !!this.session,
             email: this.session?.email || null,
+            uid: this.session?.uid || null,
             // A UI usa isto para oferecer o "confirmar e-mail". Fica false enquanto
             // não houver sessão, e é atualizado no login e na restauração do Keychain.
             emailVerified: !!this.session?.emailVerified,
+            // { id, name, role } | null — ver docs/TIMES.md
+            team: this.session?.team || null,
         };
     }
 }

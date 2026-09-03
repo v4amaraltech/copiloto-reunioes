@@ -274,6 +274,29 @@ app.whenReady().then(async () => {
                 .catch(err => console.error('[V4Sync] retryPending error:', err.message));
         }, 10_000);
 
+        // Relê o time NO SERVIDOR (não só o estado guardado): quem foi removido do time
+        // enquanto o app estava fechado precisa parar de subir calls com o papel antigo.
+        // Com time confirmado, garante que o histórico já na nuvem carrega a permissão
+        // de leitura do gestor (documentos enviados antes de o closer entrar no time).
+        setTimeout(async () => {
+            try {
+                const v4AuthService = require('./features/common/services/v4AuthService');
+                if (!(await v4AuthService.getState()).loggedIn) return;
+
+                const estado = await require('./features/common/services/v4TeamService').getMyTeam();
+                if (estado.code === 'falha_rede') {
+                    // Sem rede: fica com o estado guardado; o envio pós-call se corrige sozinho
+                    // se o servidor recusar o papel.
+                    return;
+                }
+                if (estado.team?.id) {
+                    await require('./features/common/services/v4SyncService').backfillTeamPermissions();
+                }
+            } catch (err) {
+                console.error('[V4Sync] time/backfill de permissões no boot:', err.message);
+            }
+        }, 20_000);
+
         // Nomeia por IA as calls antigas que ficaram com "Session @ <hora>".
         // Background, uma por vez e com teto por boot — não atrapalha o uso do app.
         setTimeout(() => {
@@ -598,6 +621,42 @@ async function handleCustomUrl(url) {
                         win.webContents.send('force-show-account-header', { screen: 'login', reason: 'recovery-done' });
                     }
                 });
+                break;
+            }
+            case 'team-joined': {
+                // Botão "Abrir o Copiloto" da página de convite: traz o app para a frente,
+                // recarrega o estado do time e reaplica as permissões do histórico.
+                const { windowPool } = require('./window/windowManager.js');
+                const header = windowPool.get('header');
+                if (header && !header.isDestroyed()) {
+                    if (header.isMinimized()) header.restore();
+                    header.show();
+                    header.focus();
+                    app.focus({ steal: true });
+                }
+
+                (async () => {
+                    try {
+                        const v4TeamService = require('./features/common/services/v4TeamService');
+                        const estado = await v4TeamService.getMyTeam();
+                        console.log(`[Custom URL] team-joined: time "${estado.team?.name || '—'}" (${estado.role || 'sem papel'})`);
+
+                        windowPool.forEach(win => {
+                            if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+                                win.webContents.send('teams:joined', { teamId: estado.team?.id || params.teamId || null });
+                            }
+                        });
+
+                        // Histórico que já subiu antes do convite passa a ser visível ao gestor.
+                        if (estado.team?.id) {
+                            require('./features/common/services/v4SyncService')
+                                .backfillTeamPermissions()
+                                .catch(err => console.error('[V4Sync] backfill pós-convite:', err.message));
+                        }
+                    } catch (err) {
+                        console.error('[Custom URL] team-joined falhou:', err.message);
+                    }
+                })();
                 break;
             }
             case 'personalize':

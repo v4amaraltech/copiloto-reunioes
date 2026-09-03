@@ -206,6 +206,31 @@ contextBridge.exposeInMainWorld('api', {
     removeAllAskStreamListeners: () => ipcRenderer.removeAllListeners('sessions:ask-stream'),
   },
 
+  // Times / empresa (docs/TIMES.md). Todos devolvem objeto com `success` e, no erro,
+  // { code, error } — `code` estável para a UI, `error` já em pt-BR para exibir.
+  teams: {
+    // { team: {id,name}|null, role: 'gestor'|'closer'|null, members: [...] }
+    get: () => ipcRenderer.invoke('teams:get'),
+    create: (name) => ipcRenderer.invoke('teams:create', { name }),
+    invite: (email, role) => ipcRenderer.invoke('teams:invite', { email, role }),
+    removeMember: (membershipId) => ipcRenderer.invoke('teams:removeMember', { membershipId }),
+    leave: () => ipcRenderer.invoke('teams:leave'),
+
+    // Visão do gestor — { success, sessions: [{ id, title, started_at, owner: {name,email} }] }
+    sessions: (limit) => ipcRenderer.invoke('teams:sessions', { limit }),
+    transcripts: (sessionId) => ipcRenderer.invoke('teams:transcripts', { sessionId }),
+
+    // Conversa com a reunião do closer. O streaming chega pelo MESMO canal da fatia 2:
+    // window.api.sessions.onAskStream — filtre por sessionId.
+    ask: (sessionId, question) => ipcRenderer.invoke('teams:ask', { sessionId, question }),
+    aiMessages: (sessionId) => ipcRenderer.invoke('teams:aiMessages', { sessionId }),
+
+    // Disparado quando alguém aceita o convite pela página web (deep link team-joined):
+    // callback(event, { teamId }) — a UI deve recarregar teams.get().
+    onTeamJoined: (callback) => ipcRenderer.on('teams:joined', callback),
+    removeOnTeamJoined: (callback) => ipcRenderer.removeListener('teams:joined', callback),
+  },
+
   // src/ui/listen/ListenView.js
   listenView: {
     // Window Management

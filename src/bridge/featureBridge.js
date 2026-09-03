@@ -167,6 +167,31 @@ module.exports = {
     ipcMain.handle('sessions:stopAsk', async (event, { sessionId } = {}) =>
       askService.stopSessionAnswer(sessionId));
 
+    // Times / empresa (docs/TIMES.md): o gestor vê as reuniões dos closers dele.
+    const v4TeamService = require('../features/common/services/v4TeamService');
+    ipcMain.handle('teams:get', async () => await v4TeamService.getMyTeam());
+    ipcMain.handle('teams:create', async (event, { name } = {}) => await v4TeamService.createTeam(name));
+    ipcMain.handle('teams:invite', async (event, { email, role } = {}) => await v4TeamService.invite(email, role));
+    ipcMain.handle('teams:removeMember', async (event, { membershipId } = {}) =>
+      await v4TeamService.removeMember(membershipId));
+    ipcMain.handle('teams:leave', async () => await v4TeamService.leave());
+    ipcMain.handle('teams:sessions', async (event, { limit } = {}) => await v4TeamService.teamSessions({ limit }));
+    ipcMain.handle('teams:transcripts', async (event, { sessionId } = {}) =>
+      await v4TeamService.teamTranscripts(sessionId));
+    // Conversa com uma reunião do time: reaproveita o canal 'sessions:ask-stream',
+    // só que lendo a transcrição da nuvem e gravando na sessão do closer.
+    ipcMain.handle('teams:ask', async (event, { sessionId, question } = {}) =>
+      await askService.askAboutSession({ sessionId, question, source: 'cloud' }));
+    ipcMain.handle('teams:aiMessages', async (event, { sessionId } = {}) => {
+      try {
+        const messages = await askService.getSessionAiMessages(sessionId, 'cloud');
+        return { success: true, messages };
+      } catch (error) {
+        console.error('[FeatureBridge] teams:aiMessages failed:', error);
+        return { success: false, error: error.message, messages: [] };
+      }
+    });
+
     // V4 Auth (Appwrite) - jornada de conta dos closers
     const v4AuthService = require('../features/common/services/v4AuthService');
     ipcMain.handle('v4auth:login', async (event, { email, password }) => await v4AuthService.login(email, password));

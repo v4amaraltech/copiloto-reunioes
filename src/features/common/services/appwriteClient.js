@@ -25,13 +25,23 @@ function setOnAuthError(callback) {
     onAuthErrorCallback = callback;
 }
 
+/**
+ * 401 "Permissions must be one of: ..." NÃO é sessão expirada: é o usuário tentando
+ * conceder um papel que não possui (ex.: o papel do time de que foi removido). A
+ * sessão continua válida — derrubá-la aqui deslogaria o closer por causa de uma
+ * permissão de documento (docs/TIMES.md).
+ */
+function ePermissaoRecusada(err) {
+    return /Permissions must be one of/i.test(String(err?.message || ''));
+}
+
 function interceptAuthErrors(c) {
     const originalCall = c.call.bind(c);
     c.call = async (...args) => {
         try {
             return await originalCall(...args);
         } catch (err) {
-            if (err?.code === 401 && onAuthErrorCallback) {
+            if (err?.code === 401 && onAuthErrorCallback && !ePermissaoRecusada(err)) {
                 // dispara sem await: o logout limpo não pode bloquear/recursar o request
                 setImmediate(() => onAuthErrorCallback(err));
             }
