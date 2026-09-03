@@ -1305,6 +1305,193 @@ export class SettingsView extends LitElement {
             min-width: 104px;
         }
 
+        /* ══════════════[ ABA TIME ]══════════════ */
+        .team-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .team-avatar {
+            width: 40px;
+            height: 40px;
+            flex-shrink: 0;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+            background: rgba(238, 27, 46, 0.28);
+            border: 1px solid rgba(238, 27, 46, 0.6);
+        }
+
+        .team-head-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .team-name {
+            font-size: 14.5px;
+            font-weight: 600;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .member-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 10px 2px;
+        }
+
+        .member-row + .member-row {
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .member-avatar {
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .member-body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .member-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: white;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .member-email {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, 0.45);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .member-tags {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .chip.gestor {
+            background: rgba(238, 27, 46, 0.2);
+            color: #ff9aa4;
+        }
+
+        .chip.convidado {
+            background: rgba(255, 193, 7, 0.16);
+            color: #ffdd7a;
+        }
+
+        .member-remove {
+            flex-shrink: 0;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .member-remove:hover {
+            background: rgba(238, 27, 46, 0.3);
+            border-color: rgba(238, 27, 46, 0.65);
+            color: white;
+        }
+
+        .member-remove svg {
+            width: 13px;
+            height: 13px;
+        }
+
+        .confirm-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 10px 11px;
+            border-radius: 10px;
+            background: rgba(238, 27, 46, 0.12);
+            border: 1px solid rgba(238, 27, 46, 0.45);
+        }
+
+        .confirm-row .confirm-text {
+            flex: 1;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.92);
+        }
+
+        .invite-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .invite-form .field {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .invite-form .settings-button {
+            flex-shrink: 0;
+            min-width: 104px;
+            padding: 9px 14px;
+            border-radius: 10px;
+        }
+
+        .team-notice {
+            font-size: 11.5px;
+            color: #a9e6bb;
+            background: rgba(60, 200, 110, 0.14);
+            border-radius: 9px;
+            padding: 8px 10px;
+            line-height: 1.4;
+        }
+
+        .meeting-owner {
+            color: rgba(255, 255, 255, 0.62);
+        }
+
         /* ══════════════[ ABA CONTA ]══════════════ */
         .account-head {
             display: flex;
@@ -1733,6 +1920,22 @@ export class SettingsView extends LitElement {
         chatInput: { type: String, state: true },
         chatStreaming: { type: Boolean, state: true },
         chatStreamingText: { type: String, state: true },
+        // Aba 'Time'
+        teamData: { type: Object, state: true },
+        teamLoading: { type: Boolean, state: true },
+        teamError: { type: String, state: true },
+        teamNotice: { type: String, state: true },
+        teamNameInput: { type: String, state: true },
+        teamBusy: { type: Boolean, state: true },
+        inviteEmail: { type: String, state: true },
+        teamConfirmLeave: { type: Boolean, state: true },
+        teamPendingRemoveId: { type: String, state: true },
+        teamSessions: { type: Array, state: true },
+        teamSessionsLoading: { type: Boolean, state: true },
+        teamSessionsError: { type: String, state: true },
+        meetingSource: { type: String, state: true },
+        meetingReturnTo: { type: String, state: true },
+        openMeetingError: { type: String, state: true },
         presets: { type: Array, state: true },
         selectedPreset: { type: Object, state: true },
         showPresets: { type: Boolean, state: true },
@@ -1798,6 +2001,22 @@ export class SettingsView extends LitElement {
         this.chatStreamingText = '';
         this._askStreamHandler = null;
         this._chatShouldScroll = false;
+        this.teamData = { team: null, role: null, members: [] };
+        this.teamLoading = false;
+        this.teamError = '';
+        this.teamNotice = '';
+        this.teamNameInput = '';
+        this.teamBusy = false;
+        this.inviteEmail = '';
+        this.teamConfirmLeave = false;
+        this.teamPendingRemoveId = null;
+        this.teamSessions = [];
+        this.teamSessionsLoading = false;
+        this.teamSessionsError = '';
+        this.meetingSource = 'local';
+        this.meetingReturnTo = 'reunioes';
+        this.openMeetingError = '';
+        this._teamJoinedHandler = null;
         this.agentsMode = 'list';
         this.agentDraftId = null;
         this.agentDraftTitle = '';
@@ -1997,10 +2216,41 @@ export class SettingsView extends LitElement {
         this.requestUpdate();
     }
 
-    /** Abre a transcrição da reunião no lugar da lista, na mesma aba. */
-    async openMeetingDetail(meeting) {
+    /**
+     * Ponte de leitura da reunião aberta. 'local' são as minhas calls (banco daqui);
+     * 'cloud' são as do time, que o gestor lê da nuvem. O stream é o mesmo canal.
+     */
+    _meetingApi() {
+        const s = window.api.sessions;
+        if (this.meetingSource === 'cloud') {
+            const t = window.api.teams;
+            return {
+                transcripts: (id) => t.transcripts(id),
+                aiMessages: (id) => t.aiMessages(id),
+                ask: (id, q) => t.ask(id, q),
+                stopAsk: (id) => s.stopAsk(id),
+            };
+        }
+        return {
+            transcripts: (id) => s.transcripts(id),
+            aiMessages: (id) => s.aiMessages(id),
+            ask: (id, q) => s.ask(id, q),
+            stopAsk: (id) => s.stopAsk(id),
+        };
+    }
+
+    /**
+     * Abre a transcrição da reunião no lugar da lista, na mesma aba.
+     *
+     * @param {object} meeting
+     * @param {{source?: 'local'|'cloud', returnTo?: 'reunioes'|'time'}} [opcoes]
+     */
+    async openMeetingDetail(meeting, opcoes = {}) {
+        this.meetingSource = opcoes.source || 'local';
+        this.meetingReturnTo = opcoes.returnTo || 'reunioes';
         this.openMeeting = meeting;
         this.openMeetingTurns = [];
+        this.openMeetingError = '';
         this.openMeetingLoading = true;
         this.meetingsMode = 'detail';
         this.chatMessages = [];
@@ -2011,11 +2261,15 @@ export class SettingsView extends LitElement {
         this.loadMeetingChat(meeting.id);
         this.requestUpdate();
         try {
-            const result = await window.api.sessions.transcripts(meeting.id);
+            const result = await this._meetingApi().transcripts(meeting.id);
+            if (this.openMeeting?.id !== meeting.id) return;
             this.openMeetingTurns = result?.success ? (result.transcripts || []) : [];
+            // Do time o erro vem traduzido em { code, error }: mostramos inline.
+            if (!result?.success && result?.error) this.openMeetingError = result.error;
         } catch (error) {
             console.error('[SettingsView] Falha ao carregar a transcrição:', error);
             this.openMeetingTurns = [];
+            this.openMeetingError = 'Não foi possível carregar a transcrição.';
         } finally {
             this.openMeetingLoading = false;
             this.requestUpdate();
@@ -2025,12 +2279,14 @@ export class SettingsView extends LitElement {
     backToMeetingList() {
         // Sair do detalhe com uma resposta em andamento deixaria uma geração órfã.
         if (this.chatStreaming && this.openMeeting) {
-            window.api.sessions.stopAsk(this.openMeeting.id).catch(() => {});
+            this._meetingApi().stopAsk(this.openMeeting.id).catch(() => {});
         }
         this.detachAskStream();
         this.meetingsMode = 'list';
         this.openMeeting = null;
         this.openMeetingTurns = [];
+        this.openMeetingError = '';
+        this.meetingSource = 'local';
         this.chatMessages = [];
         this.chatInput = '';
         this.chatStreaming = false;
@@ -2046,7 +2302,7 @@ export class SettingsView extends LitElement {
         this.chatLoading = true;
         this.requestUpdate();
         try {
-            const result = await window.api.sessions.aiMessages(sessionId);
+            const result = await this._meetingApi().aiMessages(sessionId);
             // Uma resposta atrasada não pode pisar numa reunião já trocada.
             if (this.openMeeting?.id !== sessionId) return;
             this.chatMessages = result?.success ? (result.messages || []) : [];
@@ -2119,7 +2375,7 @@ export class SettingsView extends LitElement {
 
         let erro = '';
         try {
-            const result = await window.api.sessions.ask(sessionId, pergunta);
+            const result = await this._meetingApi().ask(sessionId, pergunta);
             if (!result?.success) erro = result?.error || 'Não foi possível responder agora. Tente de novo.';
         } catch (error) {
             console.error('[SettingsView] Falha ao perguntar à reunião:', error);
@@ -2157,10 +2413,184 @@ export class SettingsView extends LitElement {
     async handleStopAsk() {
         if (!this.openMeeting) return;
         try {
-            await window.api.sessions.stopAsk(this.openMeeting.id);
+            await this._meetingApi().stopAsk(this.openMeeting.id);
         } catch (error) {
             console.error('[SettingsView] Falha ao parar a resposta:', error);
         }
+    }
+
+    // ── Aba 'Time' ───────────────────────────────────────────────────
+
+    /** Lê o time do servidor. Todo erro vem traduzido em { code, error }. */
+    async loadTeam({ silencioso = false } = {}) {
+        if (!window.api?.teams?.get) return;
+        if (!silencioso) {
+            this.teamLoading = true;
+            this.requestUpdate();
+        }
+        try {
+            const result = await window.api.teams.get();
+            this.teamData = {
+                team: result?.team || null,
+                role: result?.role || null,
+                members: result?.members || [],
+            };
+            this.teamError = result?.error || '';
+            // O gestor vê as calls do time; o closer não tem essa seção.
+            if (this.teamData.role === 'gestor') this.loadTeamSessions();
+        } catch (error) {
+            console.error('[SettingsView] Falha ao carregar o time:', error);
+            this.teamError = 'Não foi possível carregar os dados da empresa.';
+        } finally {
+            this.teamLoading = false;
+            this.requestUpdate();
+        }
+    }
+
+    async loadTeamSessions() {
+        if (!window.api?.teams?.sessions) return;
+        this.teamSessionsLoading = true;
+        this.teamSessionsError = '';
+        this.requestUpdate();
+        try {
+            const result = await window.api.teams.sessions(50);
+            if (result?.success) {
+                this.teamSessions = result.sessions || [];
+            } else {
+                this.teamSessions = [];
+                this.teamSessionsError = result?.error || 'Não foi possível carregar as reuniões do time.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao carregar as reuniões do time:', error);
+            this.teamSessions = [];
+            this.teamSessionsError = 'Não foi possível carregar as reuniões do time.';
+        } finally {
+            this.teamSessionsLoading = false;
+            this.requestUpdate();
+        }
+    }
+
+    /** Alguém aceitou o convite pela página web: o time mudou, releia. */
+    attachTeamJoined() {
+        if (!window.api?.teams?.onTeamJoined || this._teamJoinedHandler) return;
+        this._teamJoinedHandler = () => this.loadTeam({ silencioso: true });
+        window.api.teams.onTeamJoined(this._teamJoinedHandler);
+    }
+
+    detachTeamJoined() {
+        if (this._teamJoinedHandler && window.api?.teams?.removeOnTeamJoined) {
+            window.api.teams.removeOnTeamJoined(this._teamJoinedHandler);
+        }
+        this._teamJoinedHandler = null;
+    }
+
+    _limparAvisosTime() {
+        this.teamError = '';
+        this.teamNotice = '';
+    }
+
+    async handleCreateTeam() {
+        const nome = (this.teamNameInput || '').trim();
+        if (!nome || this.teamBusy) return;
+        this._limparAvisosTime();
+        this.teamBusy = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.teams.create(nome);
+            if (result?.success) {
+                this.teamNameInput = '';
+                await this.loadTeam({ silencioso: true });
+            } else {
+                this.teamError = result?.error || 'Não foi possível criar a empresa.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao criar a empresa:', error);
+            this.teamError = 'Não foi possível criar a empresa.';
+        } finally {
+            this.teamBusy = false;
+            this.requestUpdate();
+        }
+    }
+
+    /** Convite sempre como closer: gestor não se cria pela UI nesta fase. */
+    async handleInviteMember() {
+        const email = (this.inviteEmail || '').trim();
+        if (!email || this.teamBusy) return;
+        this._limparAvisosTime();
+        this.teamBusy = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.teams.invite(email, 'closer');
+            if (result?.success) {
+                this.teamNotice = `Convite enviado para ${email}. A pessoa entra pelo link do e-mail.`;
+                this.inviteEmail = '';
+                await this.loadTeam({ silencioso: true });
+            } else {
+                this.teamError = result?.error || 'Não foi possível enviar o convite.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao convidar:', error);
+            this.teamError = 'Não foi possível enviar o convite.';
+        } finally {
+            this.teamBusy = false;
+            this.requestUpdate();
+        }
+    }
+
+    async handleRemoveMember(member) {
+        if (this.teamBusy) return;
+        this._limparAvisosTime();
+        this.teamBusy = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.teams.removeMember(member.membershipId);
+            if (result?.success) {
+                this.teamPendingRemoveId = null;
+                this.teamNotice = `${member.name || member.email || 'A pessoa'} saiu do time.`;
+                await this.loadTeam({ silencioso: true });
+            } else {
+                this.teamError = result?.error || 'Não foi possível remover esta pessoa.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao remover membro:', error);
+            this.teamError = 'Não foi possível remover esta pessoa.';
+        } finally {
+            this.teamBusy = false;
+            this.requestUpdate();
+        }
+    }
+
+    async handleLeaveTeam() {
+        if (this.teamBusy) return;
+        this._limparAvisosTime();
+        this.teamBusy = true;
+        this.requestUpdate();
+        try {
+            const result = await window.api.teams.leave();
+            if (result?.success) {
+                this.teamConfirmLeave = false;
+                this.teamSessions = [];
+                await this.loadTeam({ silencioso: true });
+            } else {
+                this.teamError = result?.error || 'Não foi possível sair do time.';
+            }
+        } catch (error) {
+            console.error('[SettingsView] Falha ao sair do time:', error);
+            this.teamError = 'Não foi possível sair do time.';
+        } finally {
+            this.teamBusy = false;
+            this.requestUpdate();
+        }
+    }
+
+    /** Iniciais para o avatar de um membro (nome, senão e-mail). */
+    initialsFor(texto) {
+        const base = String(texto || '').trim();
+        if (!base) return '?';
+        const usuario = base.includes('@') ? base.split('@')[0] : base;
+        const partes = usuario.split(/[\s._\-+]/).filter(Boolean);
+        const letras = partes.length >= 2 ? partes[0][0] + partes[1][0] : usuario.slice(0, 2);
+        return (letras || '?').toUpperCase();
     }
 
     /** 'ter, 2 set · 14:30' curto, só para os balões. */
@@ -2560,6 +2990,8 @@ export class SettingsView extends LitElement {
         this.loadAutoUpdateSetting();
         this.loadV4AuthState();
         this.loadMeetings();
+        this.loadTeam();
+        this.attachTeamJoined();
         // Force one height calculation immediately (innerHeight may be 0 at first)
         setTimeout(() => this.updateScrollHeight(), 0);
     }
@@ -2567,6 +2999,7 @@ export class SettingsView extends LitElement {
     disconnectedCallback() {
         super.disconnectedCallback();
         this.detachAskStream();
+        this.detachTeamJoined();
         this.cleanupEventListeners();
         this.cleanupIpcListeners();
         this.cleanupWindowResize();
@@ -2693,6 +3126,8 @@ export class SettingsView extends LitElement {
         // Mesma ideia na aba de reuniões: lendo a transcrição ou digitando na
         // busca, sumir com a janela faria o usuário perder o que estava vendo.
         if (this.activeTab === 'reunioes' && (this.meetingsMode === 'detail' || this.meetingQuery)) return;
+        if (this.activeTab === 'time' && (this.meetingsMode === 'detail' || this.teamNameInput || this.inviteEmail
+            || this.teamConfirmLeave || this.teamPendingRemoveId)) return;
         window.api.settingsView.hideSettingsWindow();
     }
 
@@ -3223,6 +3658,7 @@ export class SettingsView extends LitElement {
 
         const tabs = [
             { id: 'reunioes', label: 'Reuniões', icon: icon(svg`<rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3.2v3.4M16 3.2v3.4M7.5 13h5M7.5 16.5h8"/>`) },
+            { id: 'time', label: 'Time', icon: icon(svg`<circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.7-2.9 3.1-4.6 6-4.6s5.3 1.7 6 4.6"/><path d="M16.2 6.2a3 3 0 0 1 0 5.6M17.5 14.8c2 .5 3.4 1.9 3.9 4"/>`) },
             { id: 'agentes', label: 'Agentes', icon: icon(svg`<path d="M12 3l1.9 4.9L19 9.8l-4.6 1.6L12 16.5l-2.4-5.1L5 9.8l5.1-1.9L12 3z"/><path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/>`) },
             { id: 'conta', label: 'Conta', icon: icon(svg`<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.2 3.6-5 7-5s6.2 1.8 7 5"/>`) },
             { id: 'modelos', label: 'Modelos & API', icon: icon(svg`<rect x="5.5" y="5.5" width="13" height="13" rx="2.5"/><rect x="9.5" y="9.5" width="5" height="5" rx="1"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>`) },
@@ -3476,11 +3912,17 @@ export class SettingsView extends LitElement {
                         ${this.openMeeting?.ended_at
                             ? html`<span>${this.formatMeetingDuration(this.openMeeting.started_at, this.openMeeting.ended_at)}</span>`
                             : html`<span class="meeting-live">em andamento</span>`}
+                        ${this.openMeeting?.owner ? html`
+                            <span class="sep">·</span>
+                            <span class="meeting-owner">${this.openMeeting.owner.name || this.openMeeting.owner.email}</span>
+                        ` : ''}
                     </div>
                 </div>
 
                 ${this.openMeetingLoading ? html`
                     <div class="loading-state"><div class="loading-spinner"></div><span>Carregando transcrição…</span></div>
+                ` : this.openMeetingError ? html`
+                    <div class="agent-banner error"><span>${this.openMeetingError}</span></div>
                 ` : this.openMeetingTurns.length === 0 ? html`
                     <div class="empty-state">Esta reunião não tem falas transcritas.</div>
                 ` : html`
@@ -3563,7 +4005,218 @@ export class SettingsView extends LitElement {
             </div>
         `;
 
-        const reunioesPane = this.meetingsMode === 'detail' ? meetingDetailPane : meetingsListPane;
+        // ── Aba 'Time' ──
+        const teamTitle = html`<h2 class="content-title">Time</h2>`;
+        const time = this.teamData?.team || null;
+        const meuPapel = this.teamData?.role || null;
+        const souGestor = meuPapel === 'gestor';
+        const membros = this.teamData?.members || [];
+        // O uid vem do estado da conta; o e-mail é só o fallback (o cadastro de membros
+        // pode não ter o e-mail de quem foi convidado antes de aceitar).
+        const meuUserId = this.v4Auth?.uid
+            || membros.find(m => m.email && this.v4Auth?.email && m.email === this.v4Auth.email)?.userId
+            || null;
+
+        const teamAvisos = html`
+            ${this.teamError ? html`<div class="agent-banner error"><span>${this.teamError}</span></div>` : ''}
+            ${this.teamNotice ? html`<div class="team-notice">${this.teamNotice}</div>` : ''}
+        `;
+
+        const memberRow = (m) => {
+            const ehEu = meuUserId ? m.userId === meuUserId : (!!this.v4Auth?.email && m.email === this.v4Auth.email);
+            const podeRemover = souGestor && !ehEu;
+
+            if (this.teamPendingRemoveId === m.membershipId) {
+                return html`
+                    <div class="confirm-row">
+                        <span class="confirm-text">Remover ${m.name || m.email} do time?</span>
+                        <button class="preset-action danger" ?disabled=${this.teamBusy}
+                                @click=${() => this.handleRemoveMember(m)}>
+                            ${this.teamBusy ? 'Removendo…' : 'Remover'}
+                        </button>
+                        <button class="preset-action" @click=${() => { this.teamPendingRemoveId = null; this.requestUpdate(); }}>
+                            Cancelar
+                        </button>
+                    </div>
+                `;
+            }
+
+            return html`
+                <div class="member-row">
+                    <span class="member-avatar">${this.initialsFor(m.name || m.email)}</span>
+                    <div class="member-body">
+                        <span class="member-name">${m.name || m.email || 'Sem nome'}${ehEu ? ' (você)' : ''}</span>
+                        ${m.name && m.email
+                            ? html`<span class="member-email">${m.email}</span>`
+                            : html`<span class="member-email">${m.status === 'ativo' ? 'nome ainda não informado' : 'aguardando aceitar o convite'}</span>`}
+                    </div>
+                    <div class="member-tags">
+                        <span class="chip ${m.role === 'gestor' ? 'gestor' : ''}">${m.role === 'gestor' ? 'Gestor' : 'Closer'}</span>
+                        <span class="chip ${m.status === 'ativo' ? 'ok' : 'convidado'}">${m.status === 'ativo' ? 'Ativo' : 'Convidado'}</span>
+                    </div>
+                    ${podeRemover ? html`
+                        <button class="member-remove" title="Remover do time"
+                                @click=${() => { this.teamPendingRemoveId = m.membershipId; this._limparAvisosTime(); this.requestUpdate(); }}>
+                            ${trashIcon}
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        };
+
+        // 1) Sem conta: a empresa mora na conta V4.
+        const teamSemContaPane = html`
+            ${teamTitle}
+            <p class="content-hint">A empresa fica ligada à sua conta V4.</p>
+            <div class="card">
+                <span class="card-title">Entre na sua conta</span>
+                <p class="card-sub">Para criar ou entrar numa empresa, você precisa estar conectado. Abra a aba Conta e faça login.</p>
+                <button class="settings-button primary full-width" @click=${() => { this.activeTab = 'conta'; }}>
+                    Ir para a aba Conta
+                </button>
+            </div>
+        `;
+
+        // 2) Sem time: criar a empresa.
+        const teamSemTimePane = html`
+            ${teamTitle}
+            <p class="content-hint">
+                Crie a empresa para reunir seu time aqui. Quem recebeu um convite entra pelo link do e-mail, não por esta tela.
+            </p>
+            ${teamAvisos}
+            <div class="card">
+                <span class="card-title">Criar empresa</span>
+                <div class="field">
+                    <span class="field-label">Nome da empresa</span>
+                    <input class="field-input" type="text" placeholder="Ex.: V4 Amaral"
+                        .value=${this.teamNameInput}
+                        ?disabled=${this.teamBusy}
+                        @input=${e => { this.teamNameInput = e.target.value; }}
+                        @keydown=${e => { if (e.key === 'Enter') this.handleCreateTeam(); }}
+                    />
+                </div>
+                <button class="settings-button primary full-width"
+                        ?disabled=${this.teamBusy || !(this.teamNameInput || '').trim()}
+                        @click=${() => this.handleCreateTeam()}>
+                    ${this.teamBusy ? 'Criando…' : 'Criar empresa'}
+                </button>
+            </div>
+        `;
+
+        // 3) Com time: membros, e (para o gestor) convite e reuniões do time.
+        const teamComTimePane = html`
+            ${teamTitle}
+            <p class="content-hint">
+                ${souGestor
+                    ? 'Você é o gestor: convide closers e acompanhe as reuniões do time.'
+                    : 'Você faz parte desta empresa. Suas reuniões ficam visíveis para o gestor.'}
+            </p>
+            ${teamAvisos}
+
+            <div class="card">
+                <div class="team-head">
+                    <span class="team-avatar">${this.initialsFor(time?.name)}</span>
+                    <div class="team-head-meta">
+                        <span class="team-name">${time?.name || 'Empresa'}</span>
+                        <span class="badge"><span class="dot"></span>${souGestor ? 'Gestor' : 'Closer'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-label">Membros (${membros.length})</div>
+            <div class="card">
+                ${membros.length === 0
+                    ? html`<div class="empty-state">Ninguém no time ainda.</div>`
+                    : html`<div class="member-list">${membros.map(m => memberRow(m))}</div>`}
+            </div>
+
+            ${souGestor ? html`
+                <div class="section-label">Convidar closer</div>
+                <div class="card">
+                    <div class="invite-form">
+                        <div class="field">
+                            <span class="field-label">E-mail</span>
+                            <input class="field-input" type="email" placeholder="closer@empresa.com"
+                                .value=${this.inviteEmail}
+                                ?disabled=${this.teamBusy}
+                                @input=${e => { this.inviteEmail = e.target.value; }}
+                                @keydown=${e => { if (e.key === 'Enter') this.handleInviteMember(); }}
+                            />
+                        </div>
+                        <button class="settings-button primary"
+                                ?disabled=${this.teamBusy || !(this.inviteEmail || '').trim()}
+                                @click=${() => this.handleInviteMember()}>
+                            ${this.teamBusy ? 'Enviando…' : 'Convidar'}
+                        </button>
+                    </div>
+                    <p class="card-sub">A pessoa recebe um e-mail com o link para entrar no time como closer.</p>
+                </div>
+
+                <div class="section-label">Reuniões do time</div>
+                ${this.teamSessionsLoading ? html`
+                    <div class="loading-state"><div class="loading-spinner"></div><span>Carregando reuniões do time…</span></div>
+                ` : this.teamSessionsError ? html`
+                    <div class="agent-banner error"><span>${this.teamSessionsError}</span></div>
+                ` : this.teamSessions.length === 0 ? html`
+                    <div class="empty-state">Nenhuma reunião do time ainda.<br>As calls dos closers aparecem aqui depois de gravadas.</div>
+                ` : html`
+                    <div class="meeting-list">
+                        ${this.teamSessions.map(m => html`
+                            <div class="meeting-item"
+                                 @click=${() => this.openMeetingDetail(m, { source: 'cloud', returnTo: 'time' })}>
+                                <div class="meeting-body">
+                                    <span class="meeting-title">${m.title || 'Reunião sem título'}</span>
+                                    <div class="meeting-meta">
+                                        <span>${this.formatMeetingDate(m.started_at)}</span>
+                                        ${m.ended_at ? html`
+                                            <span class="sep">·</span>
+                                            <span>${this.formatMeetingDuration(m.started_at, m.ended_at)}</span>
+                                        ` : ''}
+                                        <span class="sep">·</span>
+                                        <span class="meeting-owner">${m.owner?.name || m.owner?.email || 'Sem dono'}</span>
+                                    </div>
+                                </div>
+                                <span class="meeting-chevron">${chevronIcon}</span>
+                            </div>
+                        `)}
+                    </div>
+                `}
+            ` : ''}
+
+            <div class="buttons-section">
+                ${this.teamConfirmLeave ? html`
+                    <div class="confirm-row">
+                        <span class="confirm-text">Sair de "${time?.name}"? O gestor deixa de ver suas reuniões.</span>
+                        <button class="preset-action danger" ?disabled=${this.teamBusy}
+                                @click=${() => this.handleLeaveTeam()}>
+                            ${this.teamBusy ? 'Saindo…' : 'Sair'}
+                        </button>
+                        <button class="preset-action" @click=${() => { this.teamConfirmLeave = false; this.requestUpdate(); }}>
+                            Cancelar
+                        </button>
+                    </div>
+                ` : html`
+                    <button class="settings-button danger full-width"
+                            @click=${() => { this.teamConfirmLeave = true; this._limparAvisosTime(); this.requestUpdate(); }}>
+                        Sair do time
+                    </button>
+                `}
+            </div>
+        `;
+
+        const timeMainPane = !this.v4Auth?.loggedIn
+            ? teamSemContaPane
+            : this.teamLoading
+                ? html`${teamTitle}<div class="loading-state"><div class="loading-spinner"></div><span>Carregando empresa…</span></div>`
+                : (time ? teamComTimePane : teamSemTimePane);
+
+        const noDetalheDaReuniao = this.meetingsMode === 'detail';
+        const reunioesPane = (noDetalheDaReuniao && this.meetingReturnTo === 'reunioes')
+            ? meetingDetailPane
+            : meetingsListPane;
+        const timePane = (noDetalheDaReuniao && this.meetingReturnTo === 'time')
+            ? meetingDetailPane
+            : timeMainPane;
 
         const contaPane = html`
             <h2 class="content-title">Conta</h2>
@@ -3662,6 +4315,7 @@ export class SettingsView extends LitElement {
 
         const panes = {
             reunioes: reunioesPane,
+            time: timePane,
             agentes: agentesPane,
             conta: contaPane,
             modelos: modelosPane,
@@ -3680,6 +4334,7 @@ export class SettingsView extends LitElement {
                              @click=${() => {
                                  this.activeTab = tab.id;
                                  if (tab.id === 'reunioes' && this.meetingsMode === 'list') this.loadMeetings();
+                                 if (tab.id === 'time' && this.meetingsMode === 'list') this.loadTeam();
                              }}>
                             <span class="nav-icon">${tab.icon}</span>
                             ${tab.label}
