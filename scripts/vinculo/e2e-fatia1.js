@@ -224,6 +224,22 @@ async function main() {
         sessionTitleService.normalizarTitulo('um dois tres quatro cinco seis sete oito nove dez')
             .split(' ').length === 8);
 
+    // O backfill do app real já titulou as calls antigas, então o banco de verdade pode
+    // não ter mais nenhuma "Session @" elegível. O teste cria as suas na cópia — assim
+    // ele prova o mesmo comportamento sem depender do estado do banco do usuário.
+    const semear = (sufixo, falas) => {
+        const id = `e2e-titulo-${sufixo}-${Date.now()}`;
+        db.prepare('INSERT INTO sessions (id, uid, title, session_type, started_at, ended_at) VALUES (?, ?, ?, ?, ?, ?)')
+            .run(id, uidTeste, `Session @ ${sufixo}`, 'listen', 1000, 2000);
+        for (let i = 0; i < falas; i++) {
+            db.prepare('INSERT INTO transcripts (id, session_id, start_at, speaker, text, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+                .run(`${id}-t${i}`, id, 1000 + i, i % 2 ? 'them' : 'me',
+                     `fala ${i} sobre o diagnóstico comercial da empresa e o investimento em marketing`, 1000 + i);
+        }
+        return id;
+    };
+    for (let n = 0; n < 4; n++) semear(`seed${n}`, 8);
+
     const pendentes = sessionRepo.getSessionsNeedingTitle(uidTeste, { minTurns: 6, limit: 40 });
     console.log(`   sessões elegíveis para título por IA: ${pendentes.length}`);
     checar('há sessões elegíveis (título "Session @" + >= 6 falas)', pendentes.length > 0);
